@@ -293,7 +293,7 @@ function getSupportedUrl(text) {
   if (!text) return null;
 
   const match = text.match(
-    /https?:\/\/(?:www\.)?(instagram\.com|x\.com|twitter\.com)\/[^\s]+/i
+    /https?:\/\/(?:www\.)?(youtube\.com|youtu\.be|instagram\.com|x\.com|twitter\.com)\/[^\s]+/i
   );
 
   if (!match) return null;
@@ -301,6 +301,7 @@ function getSupportedUrl(text) {
   const url = match[0].replace(/[),.!?]+$/, "");
 
   if (
+    /(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)/i.test(url) ||
     /instagram\.com\/(reel|p|tv)\//i.test(url) ||
     /(?:x\.com|twitter\.com)\/[^/]+\/status\//i.test(url)
   ) {
@@ -331,17 +332,19 @@ async function downloadMedia(url) {
     await execFileAsync(
       "yt-dlp",
       [
-        "-f",
-        "mp4/best",
-        "--no-playlist",
-        "--no-warnings",
-        "--no-progress",
-        "--max-filesize",
-        "64M",
-        "-o",
-        outputTemplate,
-        url,
-      ],
+      	 "-f",
+ 	 "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/best",
+ 	 "--merge-output-format",
+ 	 "mp4",
+	"--no-playlist",
+ 	 "--no-warnings",
+	  "--no-progress",
+	  "--max-filesize",
+	  "64M",
+	  "-o",
+	  outputTemplate,
+	  url,
+	],
       {
         timeout: 120000,
         maxBuffer: 1024 * 1024 * 4,
