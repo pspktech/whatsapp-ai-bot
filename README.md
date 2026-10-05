@@ -261,7 +261,7 @@ Now any song you play on Spotify will auto-post to your WhatsApp! 🎵
 To send music updates to a specific number, add its JID to `.env`:
 
 ```env
-WHATSAPP_TARGET_JID=917416458536@s.whatsapp.net
+WHATSAPP_TARGET_JID=91××××××××@s.whatsapp.net
 ```
 
 ### JID Format
@@ -289,7 +289,7 @@ WHATSAPP_TARGET_JID=917416458536@s.whatsapp.net
 1. Send any message to the bot number (or to yourself via "Message Yourself")
 2. Check the terminal — you'll see:
    ```
-   📩 JID: 917416458536@s.whatsapp.net | Msg: hi
+   📩 JID: 91××××××××××@s.whatsapp.net | Msg: hi
    ```
 3. Copy the JID and paste it into `.env`
 
