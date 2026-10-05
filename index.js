@@ -333,14 +333,14 @@ async function downloadMedia(url) {
       "yt-dlp",
       [
       	 "-f",
- 	 "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/best",
- 	 "--merge-output-format",
- 	 "mp4",
+	"bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
+	"--merge-output-format",
+	"mp4",
 	"--no-playlist",
  	 "--no-warnings",
 	  "--no-progress",
 	  "--max-filesize",
-	  "64M",
+	  "500M",
 	  "-o",
 	  outputTemplate,
 	  url,
@@ -367,8 +367,8 @@ async function downloadMedia(url) {
       throw new Error("Downloaded file is empty");
     }
 
-    if (stat.size > 64 * 1024 * 1024) {
-      throw new Error("File is larger than 64MB");
+    if (stat.size > 500 * 1024 * 1024) {
+      throw new Error("File is larger than 500MB");
     }
 
     return {
@@ -474,45 +474,51 @@ async function processMessage(msg) {
     // -----------------------------------------------
     // SOCIAL DOWNLOAD
     // -----------------------------------------------
-
     const socialUrl = getSupportedUrl(text);
 
-    if (socialUrl) {
-      if (!sock) return;
+if (socialUrl) {
+  if (!sock) return;
 
-      try {
-        await sock.sendPresenceUpdate("composing", jid);
+  try {
+    await sock.sendPresenceUpdate("composing", jid);
 
-        const media = await downloadMedia(socialUrl);
+    const media = await downloadMedia(socialUrl);
 
-        await sock.sendMessage(jid, {
-          video: {
-            url: media.filePath,
-          },
-          caption: "Downloaded media",
-        });
-
-        totalSent++;
-        incrementStat("media_sent");
-
-        fs.rmSync(media.tempDir, {
-          recursive: true,
-          force: true,
-        });
-
-        return;
-      } catch (error) {
-        totalErrors++;
-        incrementStat("errors");
-
-        await sock.sendMessage(jid, {
-          text:
-            "Sorry ra, aa media download cheyyalekapoya 😕",
-        });
-
-        return;
-      }
+    if (!media || !media.filePath) {
+      throw new Error("Media download returned no file");
     }
+
+    await sock.sendMessage(jid, {
+      video: {
+        url: media.filePath,
+      },
+      caption: "Downloaded media",
+    });
+
+    totalSent++;
+    incrementStat("media_sent");
+
+    fs.rmSync(media.tempDir, {
+      recursive: true,
+      force: true,
+    });
+
+    return;
+  } catch (error) {
+    totalErrors++;
+    incrementStat("errors");
+
+    console.error("❌ MEDIA DOWNLOAD ERROR:");
+    console.error(error?.message || error);
+    console.error(error?.stderr || "");
+
+    await sock.sendMessage(jid, {
+      text: "Sorry ra, aa media download cheyyalekapoya 😕",
+    });
+
+    return;
+  }
+}
 
     // -----------------------------------------------
     // AI REPLY
