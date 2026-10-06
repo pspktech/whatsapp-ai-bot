@@ -3,7 +3,6 @@ auth_info/
 data/
 node_modules/
 index-backup.js
-.envx
 *.backup
 *.old
 node
