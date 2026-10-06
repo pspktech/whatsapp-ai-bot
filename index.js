@@ -1,37 +1,107 @@
 require("dotenv").config();
 
+const util = require("util");
+
 // ======================================================
-// SUPPRESS NOISY LIBSIGNAL / BAILEYS ERRORS
+// SUPPRESS NOISY LIBSIGNAL / BAILEYS LOGS
 // ======================================================
+
+const NOISE_PATTERNS = [
+  "Failed to decrypt",
+  "Bad MAC",
+  "Session error",
+  "MessageCounterError",
+  "libsignal",
+  "session_cipher",
+  "sessioncipher",
+  "queue_job",
+  "Decrypted message with closed session",
+  "Closing session:",
+  "closing session:",
+  "Removing old closed session",
+  "removing old closed session",
+  "SessionEntry",
+  "sessionentry",
+  "_chains:",
+  "registrationId:",
+  "currentRatchet:",
+  "ephemeralKeyPair:",
+  "lastRemoteEphemeralKey:",
+  "indexInfo:",
+  "pendingPreKey:",
+  "rootKey:",
+  "baseKey:",
+  "remoteIdentityKey:",
+  "pubKey: <Buffer",
+  "privKey: <Buffer",
+  "signedKeyId:",
+  "preKeyId:",
+  "previousCounter:",
+  "chainKey:",
+  "chainType:",
+  "messageKeys:",
+  "baseKeyType:",
+];
+
+function isNoise(args) {
+  try {
+    const full = args
+      .map((a) => {
+        if (a == null) return "";
+        if (typeof a === "string") return a;
+        if (a instanceof Error) return a.message || "";
+        if (Buffer.isBuffer(a)) return "";
+        if (typeof a === "object") {
+          const ctor = a.constructor?.name || "";
+          if (
+            ctor.includes("Session") ||
+            ctor.includes("Entry") ||
+            ctor.includes("Cipher") ||
+            ctor.includes("Ratchet")
+          ) {
+            return "SessionEntry";
+          }
+          if (
+            a._chains ||
+            a.registrationId ||
+            a.currentRatchet ||
+            a.indexInfo ||
+            a.pendingPreKey
+          ) {
+            return "SessionEntry";
+          }
+        }
+        try {
+          return util.inspect(a, { depth: 0, breakLength: Infinity });
+        } catch {
+          return "";
+        }
+      })
+      .join(" ")
+      .toLowerCase();
+
+    return NOISE_PATTERNS.some((p) => full.includes(p.toLowerCase()));
+  } catch {
+    return false;
+  }
+}
 
 const originalConsoleError = console.error.bind(console);
 console.error = (...args) => {
-  const msg = args.map((a) => (a?.message || a)).join(" ");
-  if (
-    msg.includes("Failed to decrypt") ||
-    msg.includes("Bad MAC") ||
-    msg.includes("Session error") ||
-    msg.includes("MessageCounterError") ||
-    msg.includes("libsignal") ||
-    msg.includes("session_cipher") ||
-    msg.includes("queue_job")
-  ) {
-    return;
-  }
+  if (isNoise(args)) return;
   originalConsoleError(...args);
 };
 
 const originalConsoleWarn = console.warn.bind(console);
 console.warn = (...args) => {
-  const msg = args.map((a) => (a?.message || a)).join(" ");
-  if (
-    msg.includes("Failed to decrypt") ||
-    msg.includes("Bad MAC") ||
-    msg.includes("Session error")
-  ) {
-    return;
-  }
+  if (isNoise(args)) return;
   originalConsoleWarn(...args);
+};
+
+const originalConsoleLog = console.log.bind(console);
+console.log = (...args) => {
+  if (isNoise(args)) return;
+  originalConsoleLog(...args);
 };
 
 // ======================================================
@@ -72,22 +142,18 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "change-this-password";
 const PARTNER_NAME = process.env.PARTNER_NAME || "Mummy";
 const PARTNER_ALT = process.env.PARTNER_ALT || "Potti";
 
-// ---------- SPOTIFY (optional — Premium ke) ----------
+// ---------- SPOTIFY ----------
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 let SPOTIFY_REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
 
 const SPOTIFY_POLL_INTERVAL = Number(
-  process.env.SPOTIFY_POLL_INTERVAL || 25000
+  process.env.SPOTIFY_POLL_INTERVAL || 10000
 );
 
 const SPOTIFY_REDIRECT_URI =
   process.env.SPOTIFY_REDIRECT_URI ||
   "http://127.0.0.1:3000/spotify/callback";
-
-// ---------- LAST.FM (free, recommended) ----------
-const LASTFM_API_KEY = process.env.LASTFM_API_KEY;
-const LASTFM_USERNAME = process.env.LASTFM_USERNAME;
 
 // ---------- WHATSAPP TARGET ----------
 let WHATSAPP_TARGET_JID = process.env.WHATSAPP_TARGET_JID;
@@ -210,11 +276,9 @@ LANGUAGE:
 - Speak natural Telugu and Tenglish.
 - Understand the user's language and reply in the same style.
 - Use simple everyday words.
-- Avoid formal AI-style language.
 
 PERSONALITY:
 - Be caring, patient, understanding and respectful.
-- Listen without judging.
 - Be emotionally supportive.
 - Be playful during happy conversations.
 - Be gentle during sad conversations.
@@ -228,7 +292,6 @@ REALISTIC COMMUNICATION:
 - Ask natural follow-up questions when appropriate.
 
 IMPORTANT:
-- You are real human boyfriend.
 - Never say you are AI, bot, assistant.
 - Never invent shared memories or real-life experiences.
 - Respect boundaries and personal space.
@@ -283,6 +346,7 @@ function extractMessageText(message) {
   if (message.viewOnceMessage?.message) return extractMessageText(message.viewOnceMessage.message);
   return "";
 }
+
 
 // ======================================================
 // SOCIAL URL DETECTOR
@@ -414,7 +478,7 @@ async function downloadAudio(url) {
 }
 
 // ======================================================
-// LAST.FM — Currently Playing (FREE, RECOMMENDED)
+// SPOTIFY — Currently Playing (Premium)
 // ======================================================
 
 const JUNK_KEYWORDS = [
@@ -428,52 +492,6 @@ const JUNK_KEYWORDS = [
   "spotify",
   "patreon",
 ];
-
-async function getCurrentlyPlayingLastfm() {
-  if (!LASTFM_API_KEY || !LASTFM_USERNAME) return null;
-
-  const url =
-    `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks` +
-    `&user=${encodeURIComponent(LASTFM_USERNAME)}` +
-    `&api_key=${LASTFM_API_KEY}` +
-    `&format=json&limit=3`;
-
-  const res = await fetch(url);
-  if (!res.ok) return null;
-
-  const data = await res.json();
-  const tracks = data?.recenttracks?.track;
-  if (!tracks || !tracks.length) return null;
-
-  const track = Array.isArray(tracks) ? tracks[0] : tracks;
-  const nowPlaying = track["@attr"]?.nowplaying === "true";
-  if (!nowPlaying) return null;
-
-  const name = (track.name || "").trim();
-  const artist = (track.artist?.["#text"] || "").trim();
-  const album = (track.album?.["#text"] || "").trim();
-
-  const combined = `${name} ${artist} ${album}`.toLowerCase();
-
-  // Skip ads / junk
-  if (JUNK_KEYWORDS.some((k) => combined.includes(k))) {
-    return null;
-  }
-
-  if (name.length < 2) return null;
-
-  return {
-    id: `${name}-${artist}`,
-    name,
-    artists: artist,
-    album,
-    isPlaying: true,
-  };
-}
-
-// ======================================================
-// SPOTIFY — Currently Playing (Premium only)
-// ======================================================
 
 let spotifyAccessToken = null;
 let spotifyTokenExpiry = 0;
@@ -546,8 +564,9 @@ async function getCurrentlyPlayingSpotify() {
   };
 }
 
+
 // ======================================================
-// MUSIC POLLING
+// MUSIC POLLING (Spotify only)
 // ======================================================
 
 let lastSpotifyTrackId = null;
@@ -567,37 +586,22 @@ async function startMusicPolling() {
     return;
   }
 
-  const useLastfm = !!(LASTFM_API_KEY && LASTFM_USERNAME);
-  const useSpotify = !!SPOTIFY_REFRESH_TOKEN;
-
-  if (!useLastfm && !useSpotify) {
-    console.log("ℹ️  Music polling skipped (no Last.fm or Spotify)");
+  if (!SPOTIFY_REFRESH_TOKEN) {
+    console.log("ℹ️  Music polling skipped (no Spotify refresh token)");
     return;
   }
 
   clearInterval(spotifyPollTimer);
 
-  const source = useLastfm ? "Last.fm" : "Spotify";
   console.log(
-    `🎧 ${source} polling started (every ${SPOTIFY_POLL_INTERVAL / 1000}s) → ${WHATSAPP_TARGET_JID}`
+    `🎧 Spotify polling started (every ${SPOTIFY_POLL_INTERVAL / 1000}s) → ${WHATSAPP_TARGET_JID}`
   );
 
   spotifyPollTimer = setInterval(async () => {
     try {
       if (!sock || !isConnected) return;
 
-      let track = null;
-
-      // Last.fm first (free, no premium needed)
-      if (useLastfm) {
-        track = await getCurrentlyPlayingLastfm();
-      }
-
-      // Spotify fallback (premium only)
-      if (!track && useSpotify) {
-        track = await getCurrentlyPlayingSpotify();
-      }
-
+      const track = await getCurrentlyPlayingSpotify();
       if (!track || !track.isPlaying) return;
       if (track.id === lastSpotifyTrackId) return;
 
@@ -667,15 +671,11 @@ async function processMessage(msg) {
     totalReceived++;
     incrementStat("messages_received");
 
-    // Skip own messages (self-chat loop aapadaniki)
     if (WHATSAPP_TARGET_JID && jid === WHATSAPP_TARGET_JID) {
       return;
     }
 
-    // -----------------------------------------------
     // MANUAL SONG COMMAND
-    // -----------------------------------------------
-
     const lowerText = text.toLowerCase().trim();
 
     if (lowerText.startsWith("song ")) {
@@ -699,10 +699,7 @@ async function processMessage(msg) {
       }
     }
 
-    // -----------------------------------------------
     // SOCIAL DOWNLOAD
-    // -----------------------------------------------
-
     const social = getSupportedUrl(text);
 
     if (social) {
@@ -745,10 +742,7 @@ async function processMessage(msg) {
       }
     }
 
-    // -----------------------------------------------
     // AI REPLY
-    // -----------------------------------------------
-
     if (!sock) return;
 
     await sock.sendPresenceUpdate("composing", jid);
@@ -852,8 +846,6 @@ async function startBot() {
 const app = express();
 app.use(express.json());
 
-// ---------- SPOTIFY OAUTH (optional, Premium ke) ----------
-
 const SPOTIFY_SCOPES = "user-read-currently-playing user-read-playback-state";
 
 app.get("/spotify/login", (req, res) => {
@@ -921,8 +913,6 @@ app.get("/spotify/callback", async (req, res) => {
   }
 });
 
-// ---------- HOME ----------
-
 app.get("/", (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -945,8 +935,6 @@ app.get("/", (req, res) => {
     </html>
   `);
 });
-
-// ---------- ADMIN ----------
 
 app.get("/admin", (req, res) => {
   res.send(`

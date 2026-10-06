@@ -6,3 +6,6 @@ index-backup.js
 .envx
 *.backup
 *.old
+node
+whatsapp-ai-v3@*
+*.log
