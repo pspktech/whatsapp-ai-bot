@@ -63,6 +63,16 @@ async function processMessage(msg) {
       return;
     }
 
+// ---- Reminder command ----
+if (lower.startsWith("/remind ")) {
+  if (!sock) return;
+  const reply = await handleRemindCommand(jid, text);
+  await sock.sendMessage(jid, { text: reply });
+  state.totalSent++;
+  incrementStat("messages_sent");
+  return;
+}
+    
     // ---- Manual song command ----
     if (lower.startsWith("song ")) {
       const songName = text.slice(5).trim();
