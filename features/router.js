@@ -63,6 +63,54 @@ async function processMessage(msg) {
       return;
     }
 
+// ---- Translation command ----
+if (lower.startsWith(".tr ")) {
+  const input = text.slice(4).trim();
+  const parts = input.split(" to ");
+  if (parts.length === 2) {
+    try {
+      const { translate } = require("@vitalets/google-translate-api");
+      const res = await translate(parts[0], { to: parts[1] });
+      await sock.sendMessage(jid, { text: `🌐 *Translated (${parts[1]}):*\n\n${res.text}` });
+    } catch (e) {
+      await sock.sendMessage(jid, { text: "❌ Translation failed." });
+    }
+  } else {
+    await sock.sendMessage(jid, { text: "Usage: .tr <text> to <lang>" });
+  }
+  return;
+}
+
+// ---- Notes command ----
+if (lower.startsWith(".note ")) {
+  const fs = require("fs");
+  const path = "./data/notes.json";
+  const input = text.slice(6).trim();
+  const args = input.split(" ");
+  const action = args[0];
+  const content = args.slice(1).join(" ");
+
+  let data = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path)) : {};
+  if (!data[jid]) data[jid] = [];
+
+  if (action === "add") {
+    data[jid].push({ text: content, at: Date.now() });
+    fs.writeFileSync(path, JSON.stringify(data, null, 2));
+    await sock.sendMessage(jid, { text: "✅ Note saved!" });
+  } else if (action === "list") {
+    const list = data[jid].map((n, i) => `${i + 1}. ${n.text}`).join("\n");
+    await sock.sendMessage(jid, { text: `📝 *Your Notes:*\n\n${list || "No notes yet."}` });
+  } else if (action === "del") {
+    const idx = parseInt(content) - 1;
+    if (data[jid][idx]) {
+      data[jid].splice(idx, 1);
+      fs.writeFileSync(path, JSON.stringify(data, null, 2));
+      await sock.sendMessage(jid, { text: "🗑️ Note deleted" });
+    }
+  }
+  return;
+}
+    
 // ---- Reminder command ----
 if (lower.startsWith("/remind ")) {
   if (!sock) return;
