@@ -6,6 +6,7 @@ const { insertMessage, incrementStat } = require("../db");
 const { generateAIReply } = require("./ai");
 const { getSupportedUrl, downloadMedia, downloadAudio } = require("./media");
 const { handleWeatherCommand } = require("./weather");
+const { handleRemindCommand } = require("./reminder");
 
 const queues = new Map();
 
