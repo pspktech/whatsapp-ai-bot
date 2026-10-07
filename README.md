@@ -1,24 +1,11 @@
-<div align="center">
+# 🤖 WhatsApp AI Bot v3
 
-# 🤖 WhatsApp AI Bot
+Made With Love @MadhuPatel
 
-**A personal WhatsApp companion bot with AI chat, media downloads, and live music tracking.**
+A personal WhatsApp bot with AI chat (Groq), Spotify "now playing" updates, weather reports, and media downloader — built with Baileys + Express.
 
-[![Node.js](https://img.shields.io/badge/Node.js-v18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![Baileys](https://img.shields.io/badge/Baileys-WhatsApp-25D366?logo=whatsapp&logoColor=white)](https://github.com/WhiskeySockets/Baileys)
-[![Groq](https://img.shields.io/badge/Groq-AI-FF6B35)](https://groq.com)
-[![Last.fm](https://img.shields.io/badge/Last.fm-Music-D51007?logo=last.fm&logoColor=white)](https://www.last.fm)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-
-</div>
-
----
-
-## 📖 Overview
-
-**WhatsApp AI Bot** is a personal companion that lives in your WhatsApp. It chats like a real human (Tenglish — Telugu + English mix), downloads videos from social links, sends Spotify songs as audio, and auto-updates your currently playing music — all for **free**, no Spotify Premium needed.
-
-Built with **Baileys**, **Groq AI**, **Last.fm API**, and **SQLite** for local storage.
+![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
 ---
 
@@ -26,637 +13,227 @@ Built with **Baileys**, **Groq AI**, **Last.fm API**, and **SQLite** for local s
 
 | Feature | Description |
 |---------|-------------|
-| 💬 **AI Chat Replies** | Natural Tenglish replies via Groq AI (Llama 3.3 70B) |
-| 📥 **Media Downloads** | YouTube, Instagram Reels, X/Twitter videos |
-| 🎵 **Spotify Songs** | Send a Spotify link → get MP3 audio back |
-| 🎧 **Live Music Updates** | Auto-posts "Ippudu vintunna..." from Last.fm |
-| 🎤 **Manual Song Command** | Type `song <name>` → bot sends it |
-| 🖥️ **Admin Dashboard** | Web UI with live stats and token auth |
-| 💾 **SQLite Storage** | Chat history + usage stats saved locally |
-| 🔐 **Password Protected** | Admin login with bearer tokens |
-| 🚫 **Smart Ad Filter** | Auto-skips Spotify/Last.fm ad tracks |
-| 🎨 **Clean Console** | Suppresses noisy Baileys/libsignal errors |
-
----
-
-## 🎬 Demo
-
-### Chat with AI
-```
-You:  Em chestunnav?
-Bot:  Songs vintunna 🎧 nuvvu em chestunnav?
-
-You:  Tinnava?
-Bot:  Thinna... nuvvu tinnava? ❤️
-
-You:  I love you
-Bot:  Aww... that's sweet 🥺❤️
-```
-
-### Manual song command
-```
-You:  song Kesariya
-Bot:  🎧 Ippudu vintunna:
-
-      🎵 Kesariya
-```
-
-### Auto music updates (from Last.fm)
-```
-🎧 Ippudu vintunna:
-
-🎵 Moosina Muthyalake
-🎤 Annamayya Keerthana, S. P. Balasubrahmanyam
-💿 Annamayya
-```
-
-### Media download
-```
-You:  https://www.youtube.com/watch?v=xxxxx
-Bot:  [sends video]
-
-You:  https://open.spotify.com/track/xxxxx
-Bot:  [sends audio]
-```
-
----
-
-## 📋 Prerequisites
-
-Before you begin, make sure you have:
-
-- ✅ **Node.js** v18 or higher
-- ✅ **Termux** (Android) or **Linux/Ubuntu**
-- ✅ **yt-dlp** + **ffmpeg** for media downloads
-- ✅ **Groq API Key** (free) → [Get one](https://console.groq.com/keys)
-- ✅ **Last.fm API Key** (free, optional) → [Get one](https://www.last.fm/api/account/create)
-- ✅ **WhatsApp account** with linked device support
-
----
-
-## 🚀 Installation
-
-### Step 1 — Clone the repository
-
-```bash
-git clone https://github.com/pspktech/whatsapp-ai-bot.git
-cd whatsapp-ai-bot
-```
-
-### Step 2 — Install Node dependencies
-
-```bash
-npm install
-```
-
-### Step 3 — Install system dependencies
-
-**Termux:**
-```bash
-pkg update && pkg upgrade -y
-pkg install yt-dlp ffmpeg nodejs-lts git -y
-```
-
-**Ubuntu / Debian:**
-```bash
-sudo apt update
-sudo apt install yt-dlp ffmpeg nodejs npm git -y
-```
-
-**macOS (Homebrew):**
-```bash
-brew install yt-dlp ffmpeg node git
-```
-
-### Step 4 — Create `.env` file
-
-```bash
-nano .env
-```
-
-Paste the following template and fill in your values:
-
-```env
-# ============================================
-# AI (required)
-# ============================================
-GROQ_API_KEY=your_groq_api_key_here
-AI_MODEL=openai/gpt-oss-120b
-MAX_HISTORY=10
-
-# ============================================
-# Admin Dashboard
-# ============================================
-PORT=3000
-ADMIN_PASSWORD=change-this-password
-
-# ============================================
-# Character / Personality
-# ============================================
-PARTNER_NAME=Mummy
-PARTNER_ALT=Potti
-
-# ============================================
-# WhatsApp Target (where music updates go)
-# ============================================
-WHATSAPP_TARGET_JID=91XXXXXXXXXX@s.whatsapp.net
-
-# ============================================
-# Last.fm (FREE music tracking — recommended)
-# ============================================
-LASTFM_API_KEY=your_lastfm_api_key
-LASTFM_USERNAME=your_lastfm_username
-
-# ============================================
-# Spotify (optional — Premium account only)
-# ============================================
-SPOTIFY_CLIENT_ID=
-SPOTIFY_CLIENT_SECRET=
-SPOTIFY_REFRESH_TOKEN=
-SPOTIFY_POLL_INTERVAL=25000
-SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/spotify/callback
-```
-
-Save with `Ctrl+O` → `Enter` → `Ctrl+X`
-
-### Step 5 — Start the bot
-
-```bash
-npm start
-```
-
-### Step 6 — Link WhatsApp
-
-1. A **QR code** appears in the terminal
-2. Open WhatsApp on your phone
-3. Go to **Settings → Linked Devices → Link a Device**
-4. Scan the QR code
-
-You should see:
-
-```
-🌐 Admin: http://127.0.0.1:3000/admin
-✅ WhatsApp connected
-🎧 Last.fm polling started (every 25s) → 91xxx@s.whatsapp.net
-```
-
----
-
-## 🎧 Last.fm Setup (Free Music Tracking)
-
-Spotify's `currently-playing` API requires **Spotify Premium**, but **Last.fm is free** and works with Spotify Free.
-
-### Step 1 — Create Last.fm account
-
-Sign up at → https://www.last.fm/join
-
-Note your **username** (you'll need it later).
-
-### Step 2 — Connect Spotify to Last.fm
-
-1. Go to → https://www.last.fm/settings/applications
-2. Find **Spotify** section
-3. Click **Connect** → authorize with your Spotify account
-
-Now every song you play on Spotify will **auto-scrobble** to Last.fm.
-
-> ⚠️ Spotify requires you to re-authorize Last.fm every **6 months**.
-
-### Step 3 — Get Last.fm API Key
-
-1. Go to → https://www.last.fm/api/account/create
-2. Fill the form:
-   - **Application name:** `WhatsApp Music Bot`
-   - **Description:** `Personal bot`
-   - **Callback URL:** *(leave empty)*
-3. Click **Submit**
-4. Copy the **API key**
-
-### Step 4 — Add to `.env`
-
-```env
-LASTFM_API_KEY=your_api_key_here
-LASTFM_USERNAME=your_lastfm_username
-```
-
-### Step 5 — Restart the bot
-
-```bash
-pkill -f "node index.js"
-npm start
-```
-
-You should see:
-
-```
-🎧 Last.fm polling started (every 25s) → 91xxx@s.whatsapp.net
-```
-
-Now any song you play on Spotify will auto-post to your WhatsApp! 🎵
-
----
-
-## 📱 WhatsApp JID Setup
-
-To send music updates to a specific number, add its JID to `.env`:
-
-```env
-WHATSAPP_TARGET_JID=91××××××××@s.whatsapp.net
-```
-
-### JID Format
-
-```
-<country_code><number>@s.whatsapp.net
-```
-
-**Rules:**
-- ❌ No `+` sign
-- ❌ No spaces or dashes
-- ❌ No brackets
-- ✅ Only digits + `@s.whatsapp.net`
-
-**Examples:**
-
-| Phone Number | JID |
-|---|---|
-| +91 98765 43210 | `919876543210@s.whatsapp.net` |
-| +1 415 555 0100 | `14155550100@s.whatsapp.net` |
-| +44 7911 123456 | `447911123456@s.whatsapp.net` |
-
-### How to Find Your JID
-
-1. Send any message to the bot number (or to yourself via "Message Yourself")
-2. Check the terminal — you'll see:
-   ```
-   📩 JID: 91××××××××××@s.whatsapp.net | Msg: hi
-   ```
-3. Copy the JID and paste it into `.env`
-
----
-
-## 🎵 Usage
-
-### 💬 Just chat normally
-
-The bot replies in **Tenglish** style — short, caring, playful.
-
-```
-You:  Em chestunnav?
-Bot:  Songs vintunna 🎧 nuvvu em chestunnav?
-
-You:  Jagratha
-Bot:  Sare... nuv kuda jagrathaga undu ❤️
-
-You:  Poo ra
-Bot:  Emaindhi Mummy? Cheppu naku 🥺
-```
-
-### 🎤 Send a song name manually
-
-```
-song Kesariya
-```
-
-Response:
-
-```
-🎧 Ippudu vintunna:
-
-🎵 Kesariya
-```
-
-### 🎧 Auto music updates (Last.fm)
-
-Play any song on Spotify → wait 30-60 seconds → bot auto-posts it to your WhatsApp.
-
-### 📥 Media downloads
-
-Just paste a link in WhatsApp:
-
-| Link Type | Result |
-|---|---|
-| `https://www.youtube.com/watch?v=...` | 📹 Video (MP4) |
-| `https://youtube.com/shorts/...` | 📹 Short video |
-| `https://www.instagram.com/reel/...` | 📹 Reel video |
-| `https://x.com/.../status/...` | 📹 Tweet video |
-| `https://open.spotify.com/track/...` | 🎵 MP3 audio |
-
----
-
-## 🖥️ Admin Dashboard
-
-Access the web dashboard at:
-
-```
-http://127.0.0.1:3000/admin
-```
-
-Login with your `ADMIN_PASSWORD`.
-
-### Dashboard Stats
-
-| Metric | Description |
-|---|---|
-| **Bot Status** | ONLINE / OFFLINE |
-| **Messages Received** | Total incoming messages |
-| **Messages Sent** | Total bot replies sent |
-| **AI Replies** | AI-generated responses |
-| **Active Chats** | Unique chat count |
-| **Media Sent** | Videos/audio sent |
-| **Audio Sent** | Spotify audio specifically |
-| **Music Updates** | Last.fm/Spotify auto-posts |
-| **Errors** | Failed operations |
-| **DB Messages** | Total messages in SQLite |
-
-Auto-refreshes every 5 seconds.
+| 💬 **AI Chat** | Human-like Telugu/English (Tenglish) replies using Groq (LLaMA / GPT-OSS) |
+| 🎧 **Spotify Now Playing** | Auto-polls Spotify every 10s, sends "Ippudu vintunna" updates |
+| 🌤️ **Weather** | `/weather` command + daily 7 AM auto report (Open-Meteo, no API key) |
+| 🎬 **Media Downloader** | YouTube / Instagram / X / Twitter — video + audio via `yt-dlp` |
+| 🎵 **Spotify Downloader** | Paste a Spotify link → bot downloads MP3 from YouTube |
+| 📊 **Admin Dashboard** | Live stats: messages, AI replies, media sent, uptime |
+| 🔒 **Session Persistence** | WhatsApp login saved in `data/auth`, no QR on restart |
+| 🧹 **Noise Filter** | Suppresses Baileys/libsignal verbose logs |
 
 ---
 
 ## 📁 Project Structure
 
 ```
-whatsapp-ai-bot/
-├── index.js                  # Main bot file
-├── package.json              # Node dependencies
-├── .env                      # Secrets (NOT committed)
-├── .gitignore                # Git ignore rules
-├── README.md                 # This file
-└── data/                     # Runtime data (NOT committed)
-    ├── assistant.db          # SQLite database
-    └── auth/                 # WhatsApp session files
+whatsapp-ai-v3/
+├── index.js                    # Entry point — WhatsApp setup + boot
+├── config.js                   # Env vars loader
+├── logger.js                   # Suppress noisy Baileys logs
+├── state.js                    # Shared mutable state
+├── db.js                       # SQLite (better-sqlite3)
+├── features/
+│   ├── ai.js                   # Groq AI + system prompt
+│   ├── weather.js              # Open-Meteo weather
+│   ├── spotify.js              # Spotify auth + polling
+│   ├── media.js                # URL detect + yt-dlp download
+│   ├── router.js               # Message router
+│   └── admin.js                # Express routes + dashboard
+├── data/                       # SQLite DB + WhatsApp auth (gitignored)
+├── .env                        # Secrets (gitignored)
+└── package.json
 ```
 
 ---
 
-## ⚙️ Environment Variables
+## 🚀 Quick Start
 
-### AI
+### Prerequisites
 
-| Variable | Required | Description | Default |
-|---|---|---|---|
-| `GROQ_API_KEY` | ✅ | Groq AI API key | — |
-| `AI_MODEL` | ❌ | Model to use | `openai/gpt-oss-120b` |
-| `MAX_HISTORY` | ❌ | Messages in context | `10` |
+- **Node.js** ≥ 18
+- **yt-dlp** (media downloader)
+- **ffmpeg** (audio conversion)
+- **Spotify Premium** (for "now playing" — optional)
 
-### Admin Dashboard
-
-| Variable | Required | Description | Default |
-|---|---|---|---|
-| `PORT` | ❌ | Server port | `3000` |
-| `ADMIN_PASSWORD` | ✅ | Dashboard password | `change-this-password` |
-
-### Character
-
-| Variable | Required | Description | Default |
-|---|---|---|---|
-| `PARTNER_NAME` | ❌ | Primary pet name | `Mummy` |
-| `PARTNER_ALT` | ❌ | Alternative pet name | `Potti` |
-
-### WhatsApp
-
-| Variable | Required | Description | Default |
-|---|---|---|---|
-| `WHATSAPP_TARGET_JID` | ❌ | Music updates receiver | — |
-
-### Last.fm
-
-| Variable | Required | Description | Default |
-|---|---|---|---|
-| `LASTFM_API_KEY` | ❌ | Last.fm API key | — |
-| `LASTFM_USERNAME` | ❌ | Last.fm username | — |
-
-### Spotify (optional)
-
-| Variable | Required | Description | Default |
-|---|---|---|---|
-| `SPOTIFY_CLIENT_ID` | ❌ | Spotify app client ID | — |
-| `SPOTIFY_CLIENT_SECRET` | ❌ | Spotify app secret | — |
-| `SPOTIFY_REFRESH_TOKEN` | ❌ | OAuth refresh token | — |
-| `SPOTIFY_POLL_INTERVAL` | ❌ | Poll interval (ms) | `25000` |
-| `SPOTIFY_REDIRECT_URI` | ❌ | OAuth redirect | `http://127.0.0.1:3000/spotify/callback` |
-
----
-
-## 🐛 Troubleshooting
-
-### ❌ `Bad MAC` / `Failed to decrypt` errors
-
-**Symptom:**
-```
-Failed to decrypt message with any known session...
-Session error:Error: Bad MAC
-```
-
-**Cause:** Normal Baileys warning after connecting — old WhatsApp session keys.
-
-**Fix:** Ignore them. The bot already filters these out in the console. Bot works fine.
-
----
-
-### ❌ Music updates not arriving
-
-**Checklist:**
-
-1. **Last.fm username correct?** → https://www.last.fm/user/YOUR_USERNAME
-2. **Spotify connected to Last.fm?** → https://www.last.fm/settings/applications
-3. **Play a full song** (30+ seconds) on Spotify
-4. **Wait 30-60 seconds** for Last.fm to sync
-5. **Test the API directly:**
-   ```bash
-   curl "https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=YOUR_USERNAME&api_key=YOUR_KEY&format=json&limit=1"
-   ```
-   Look for `"nowplaying":"true"` in the response.
-
----
-
-### ❌ `Spotify token failed (401)`
-
-Spotify refresh token expired. Re-run the OAuth flow:
-
-```
-http://127.0.0.1:3000/spotify/login
-```
-
----
-
-### ❌ `Cannot find module 'xxx'`
-
-Missing dependency:
+### Install
 
 ```bash
+# 1. Clone
+git clone https://github.com/pspktech/whatsapp-ai-bot.git
+cd whatsapp-ai-bot
+
+# 2. Install deps
 npm install
-```
 
----
+# 3. Install system tools (Termux / Linux)
+pkg install yt-dlp ffmpeg        # Termux
+# OR
+sudo apt install yt-dlp ffmpeg   # Debian/Ubuntu
 
-### ❌ `EADDRINUSE: address already in use`
+# 4. Copy env template
+cp .env.example .env
+# Edit .env with your keys (see below)
 
-Port 3000 already in use. Kill the old process:
-
-```bash
-pkill -f "node index.js"
-```
-
-Or change `PORT` in `.env`.
-
----
-
-### ❌ `yt-dlp: command not found`
-
-Install yt-dlp:
-
-```bash
-# Termux
-pkg install yt-dlp -y
-
-# Ubuntu
-sudo apt install yt-dlp -y
-
-# macOS
-brew install yt-dlp
-```
-
----
-
-### ❌ Server not starting
-
-Check for syntax errors:
-
-```bash
-node -c index.js
-```
-
-If no output → syntax is clean. Otherwise, error message will show the line.
-
----
-
-### ❌ QR code not appearing
-
-Delete the auth folder and restart:
-
-```bash
-rm -rf data/auth
+# 5. Run
 npm start
 ```
 
----
-
-## 🔐 Security Best Practices
-
-| ⚠️ Rule | Why |
-|---|---|
-| **Never commit `.env`** | Contains API keys and secrets |
-| **Use strong `ADMIN_PASSWORD`** | Dashboard has full stats access |
-| **Rotate keys if exposed** | Regenerate on Groq/Last.fm/Spotify |
-| **Private repo preferred** | Personal bot, not for public |
-| **`.gitignore` includes:** | `.env`, `data/`, `node_modules/`, `*.backup` |
-
-### If keys are accidentally committed
-
-1. **Revoke the key immediately:**
-   - Groq → https://console.groq.com/keys
-   - Last.fm → https://www.last.fm/api/accounts
-   - Spotify → https://developer.spotify.com/dashboard
-2. **Generate a new key**
-3. **Update `.env`**
-4. **Remove from Git history:**
-   ```bash
-   git rm --cached .env
-   git commit -m "Remove secrets"
-   git push --force
-   ```
+First run → QR code terminal lo vastundi. Phone lo **WhatsApp → Linked Devices → Link a Device** scan cheyyi.
 
 ---
 
-## 📦 Dependencies
+## 🔐 Environment Variables (`.env`)
 
-### NPM Packages
+```env
+# ---------- Server ----------
+PORT=3000
+ADMIN_PASSWORD=change-this-password
 
-| Package | Purpose |
-|---|---|
-| `@whiskeysockets/baileys` | WhatsApp Web API |
-| `openai` | Groq AI client (OpenAI-compatible) |
-| `better-sqlite3` | Fast local database |
-| `express` | Admin dashboard server |
-| `qrcode-terminal` | QR code display |
-| `pino` | Structured logging |
-| `dotenv` | Load `.env` variables |
+# ---------- Groq AI ----------
+GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxx
+AI_MODEL=openai/gpt-oss-120b
+MAX_HISTORY=10
 
-### System Tools
+# ---------- Partner persona ----------
+PARTNER_NAME=Mummy
+PARTNER_ALT=Potti
 
-| Tool | Purpose |
-|---|---|
-| `yt-dlp` | Download videos/audio from URLs |
-| `ffmpeg` | Merge video+audio, convert formats |
-| `node` | JavaScript runtime |
+# ---------- Spotify ----------
+SPOTIFY_CLIENT_ID=xxxxxxxxxxxx
+SPOTIFY_CLIENT_SECRET=xxxxxxxxxxxx
+SPOTIFY_REFRESH_TOKEN=xxxxxxxxxxxx
+SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/spotify/callback
+SPOTIFY_POLL_INTERVAL=10000
 
----
+# ---------- WhatsApp ----------
+WHATSAPP_TARGET_JID=91XXXXXXXXXX@s.whatsapp.net
 
-## 🗺️ Roadmap
+# ---------- Weather ----------
+WEATHER_CITY=Hyderabad
+```
 
-- [x] AI chat replies (Tenglish)
-- [x] YouTube / Instagram / X downloads
-- [x] Spotify link → audio
-- [x] Last.fm live music updates
-- [x] Manual `song <name>` command
-- [x] Admin dashboard with stats
-- [x] Ad track filtering
-- [x] Console error filtering
-- [ ] Voice note replies
-- [ ] Image generation
-- [ ] Weather updates
-- [ ] Daily good morning messages
-- [ ] Reminders / alarms
-- [ ] News headlines
-- [ ] Group chat support
-- [ ] Multi-user support
+### Getting keys
+
+**Groq API Key** → https://console.groq.com/keys
+
+**Spotify** →
+1. https://developer.spotify.com/dashboard → Create App
+2. Redirect URI add cheyyi: `http://127.0.0.1:3000/spotify/callback`
+3. Copy Client ID + Secret → `.env` lo paste
+4. Browser lo open: `http://127.0.0.1:3000/spotify/login` → authorize
+5. Refresh token auto `.env` lo save avutundi ✅
 
 ---
 
-## 🤝 Contributing
+## 💬 Commands
 
-This is a personal project, but suggestions are welcome!
-
-1. Fork the repo
-2. Create a branch (`git checkout -b feature/amazing`)
-3. Commit changes (`git commit -m "Add amazing feature"`)
-4. Push (`git push origin feature/amazing`)
-5. Open a Pull Request
+| Command | Description |
+|---------|-------------|
+| `/weather` | Weather — default city (`WEATHER_CITY`) |
+| `/weather Mumbai` | Weather — specific city |
+| `weather hyderabad` | Same, lowercase without slash |
+| `song <name>` | Manual "now playing" message |
+| `<YouTube/IG/X URL>` | Auto download + send video |
+| `<Spotify URL>` | Auto download MP3 from YouTube |
+| Any other text | AI reply (Tenglish boyfriend persona) |
 
 ---
 
-## 📝 License
+## 📊 Admin Dashboard
 
-This project is licensed under the **MIT License** — use freely, modify as you wish.
+Local: http://127.0.0.1:3000/admin
+
+Password: `.env` lo `ADMIN_PASSWORD`
+
+Live stats:
+- Bot status (ONLINE / OFFLINE)
+- Messages received / sent
+- AI replies count
+- Media sent, audio sent
+- Spotify updates
+- Errors
+- Active chats, DB messages
+
+---
+
+## ☁️ Deployment
+
+### Render (recommended free tier)
+
+1. Push code to GitHub
+2. https://render.com → **New Web Service** → connect repo
+3. Settings:
+   - **Build**: `npm install`
+   - **Start**: `npm start`
+   - **Runtime**: Node
+4. **Environment** tab → add all `.env` vars
+5. **Disks** tab → Add Disk:
+   - Name: `whatsapp-session`
+   - Mount Path: `/opt/render/project/src/data`
+   - Size: 1 GB
+6. Deploy → check **Logs** for QR → scan
+
+⚠️ **Free tier sleeps after 15 min idle** → use [cron-job.org](https://cron-job.org) to ping every 10 min.
+
+### VPS (Oracle Cloud / Hostinger / Cyfuture)
+
+```bash
+# Install Node 20
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs yt-dlp ffmpeg
+
+# Clone + setup
+git clone <your-repo> && cd whatsapp-ai-bot
+npm install
+nano .env   # add keys
+npm start
+```
+
+**Keep alive** with `pm2`:
+
+```bash
+npm i -g pm2
+pm2 start index.js --name whatsapp-bot
+pm2 save
+pm2 startup
+```
+
+---
+
+## 🛠️ Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| `🚪 Logged out` | `rm -rf data/auth && npm start` → re-scan QR |
+| `Waiting for this message` | `rm -rf data/auth` + `npm install @whiskeysockets/baileys@latest` → re-scan |
+| `Closing session: SessionEntry` spam | `logger.js` — stdout/stderr filter add cheyyi |
+| Spotify `invalid_grant` | Auth code single-use, 10 min expire. Fresh code theesuko |
+| Weather "city not found" | Spelling check cheyyi |
+| `yt-dlp: command not found` | `pkg install yt-dlp` (Termux) / `apt install yt-dlp` |
+
+---
+
+## 📝 Notes
+
+- **`.env` never commit** — it's in `.gitignore`
+- **`data/` never commit** — contains WhatsApp auth (account access!)
+- **Client Secret rotate** if accidentally exposed
+- **Only one instance** — multiple `node index.js` corrupts sessions
+- **Baileys version** — keep updated: `npm install @whiskeysockets/baileys@latest`
+
+---
+
+## 📜 License
+
+MIT — free to use, modify, share.
 
 ---
 
 ## 🙏 Credits
 
-Special thanks to:
-
-- **[Baileys](https://github.com/WhiskeySockets/Baileys)** — WhatsApp Web library
-- **[Groq](https://groq.com)** — Blazing fast AI inference
-- **[Last.fm](https://www.last.fm)** — Free music scrobbling API
-- **[Spotify](https://spotify.com)** — Music streaming platform
-- **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** — Powerful media downloader
-
----
-
-## 📞 Support
-
-For issues, questions, or feature requests:
-
-- 🐛 **Open an issue:** [GitHub Issues](https://github.com/pspktech/whatsapp-ai-bot/issues)
-- 💬 **Discussion:** Start a new discussion
-
----
-
-<div align="center">
-
-**Made with ❤️ for personal use.**
-
-⭐ Star this repo if you found it useful!
-
-</div>
+- [Baileys](https://github.com/WhiskeySockets/Baileys) — WhatsApp Web API
+- [Groq](https://groq.com) — Fast LLM inference
+- [Open-Meteo](https://open-meteo.com) — Free weather API
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) — Media downloader
+- [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) — Database
