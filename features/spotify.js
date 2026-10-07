@@ -68,14 +68,55 @@ async function getCurrentlyPlayingSpotify() {
   const combined = `${name} ${artists} ${album}`.toLowerCase();
   if (JUNK_KEYWORDS.some((k) => combined.includes(k))) return null;
 
-  return { id: data.item.id, name, artists, album, isPlaying: data.is_playing };
+  return {
+    id: data.item.id,
+    name,
+    artists,
+    album,
+    isPlaying: data.is_playing,
+    image: data.item.album?.images?.[0]?.url || null,
+    url: data.item.external_urls?.spotify || null,
+  };
+}
+
+// ======================================================
+// RICH MESSAGE FORMAT (date + time + random emojis)
+// ======================================================
+
+const MUSIC_EMOJIS = [
+  "🎵", "🎶", "🎧", "🎤", "🎼", "🎹",
+  "🎸", "🥁", "🎷", "🎺", "💿", "🔊", "📻",
+];
+
+function randomEmoji() {
+  return MUSIC_EMOJIS[Math.floor(Math.random() * MUSIC_EMOJIS.length)];
 }
 
 function formatTrackMessage(track) {
-  let msg = `🎧 Ippudu vintunna:\n\n`;
+  const now = new Date();
+
+  const date = now.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
+
+  const time = now.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata",
+  });
+
+  const userName = env.SPOTIFY_USER_NAME || "Madhu";
+
+  let msg = `${randomEmoji()} *A song is being played by ${userName} on Spotify* ${randomEmoji()}\n\n`;
   msg += `🎵 *${track.name}*\n`;
   msg += `🎤 ${track.artists}\n`;
-  if (track.album) msg += `💿 ${track.album}`;
+  if (track.album) msg += `💿 ${track.album}\n`;
+  msg += `\n📅 ${date}\n`;
+  msg += `⏰ ${time} ${randomEmoji()}`;
   return msg;
 }
 
@@ -108,9 +149,19 @@ async function startMusicPolling() {
       if (track.id === lastSpotifyTrackId) return;
 
       lastSpotifyTrackId = track.id;
-      await state.sock.sendMessage(env.WHATSAPP_TARGET_JID, {
-        text: formatTrackMessage(track),
-      });
+
+      // If image available → send with album art
+      if (track.image) {
+        await state.sock.sendMessage(env.WHATSAPP_TARGET_JID, {
+          image: { url: track.image },
+          caption: formatTrackMessage(track),
+        });
+      } else {
+        await state.sock.sendMessage(env.WHATSAPP_TARGET_JID, {
+          text: formatTrackMessage(track),
+        });
+      }
+
       incrementStat("spotify_updates");
       console.log("🎵 Music update sent:", track.name);
     } catch (err) {
