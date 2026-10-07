@@ -15,6 +15,7 @@ const env = {
   SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,
   SPOTIFY_REFRESH_TOKEN: process.env.SPOTIFY_REFRESH_TOKEN,
   SPOTIFY_POLL_INTERVAL: Number(process.env.SPOTIFY_POLL_INTERVAL || 10000),
+  SPOTIFY_USER_NAME: process.env.SPOTIFY_USER_NAME || "Madhu",
   SPOTIFY_REDIRECT_URI:
     process.env.SPOTIFY_REDIRECT_URI ||
     "http://127.0.0.1:3000/spotify/callback",
