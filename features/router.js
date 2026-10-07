@@ -7,6 +7,7 @@ const { generateAIReply } = require("./ai");
 const { getSupportedUrl, downloadMedia, downloadAudio } = require("./media");
 const { handleWeatherCommand } = require("./weather");
 const { handleRemindCommand } = require("./reminder");
+const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 
 const queues = new Map();
 
@@ -35,13 +36,18 @@ async function processMessage(msg) {
   const sock = state.sock;
   try {
     if (!msg?.message) return;
-    if (msg.key?.fromMe) return;
 
     const jid = msg.key?.remoteJid;
     if (!jid) return;
     if (jid.endsWith("@g.us") || jid === "status@broadcast") return;
 
     const text = extractMessageText(msg.message).trim();
+    const isOwner = msg.key?.fromMe;
+
+    // Owner పంపిన మెసేజ్ అయినా, "." తో మొదలైతే process చేయి
+    // (మిగతావి ignore — infinite loop ఆపడానికి)
+    if (isOwner && !text.startsWith(".")) return;
+
     if (!text) return;
 
     console.log("📩 JID:", jid, "| Msg:", text);
@@ -51,6 +57,50 @@ async function processMessage(msg) {
     if (env.WHATSAPP_TARGET_JID && jid === env.WHATSAPP_TARGET_JID) return;
 
     const lower = text.toLowerCase().trim();
+
+    // ---- Profile Picture command ----
+    if (lower === ".pp" || lower.startsWith(".pp ")) {
+      if (!sock) return;
+      try {
+        const ctx = msg.message?.extendedTextMessage?.contextInfo;
+
+        // కేస్ 1: ఫోటోకి రిప్లై ఇచ్చి బోట్ PP సెట్ చేయడం
+        if (ctx?.quotedMessage?.imageMessage) {
+          const buffer = await downloadMediaMessage(
+            { message: ctx.quotedMessage, key: msg.key },
+            "buffer",
+            {}
+          );
+          await sock.updateProfilePicture(sock.user.id, buffer);
+          await sock.sendMessage(jid, { text: "✅ Profile picture updated!" });
+          state.totalSent++;
+          incrementStat("messages_sent");
+          return;
+        }
+
+        // కేస్ 2: మెన్షన్ చేసిన యూజర్ PP తీసుకోవడం
+        const mentioned = ctx?.mentionedJid?.[0];
+        if (mentioned) {
+          try {
+            const url = await sock.profilePictureUrl(mentioned, "image");
+            await sock.sendMessage(jid, { image: { url } });
+            state.totalSent++;
+            incrementStat("messages_sent");
+          } catch {
+            await sock.sendMessage(jid, { text: "❌ User has no profile picture." });
+          }
+          return;
+        }
+
+        // కేస్ 3: ఏదీ లేకపోతే
+        await sock.sendMessage(jid, {
+          text: "❌ Reply to an image to set, or mention a user to get their PP.",
+        });
+      } catch (e) {
+        await sock.sendMessage(jid, { text: "❌ Failed: " + e.message });
+      }
+      return;
+    }
 
     // ---- Weather command ----
     if (lower === "/weather" || lower.startsWith("/weather ")) {
@@ -63,64 +113,69 @@ async function processMessage(msg) {
       return;
     }
 
-// ---- Translation command ----
-if (lower.startsWith(".tr ")) {
-  const input = text.slice(4).trim();
-  const parts = input.split(" to ");
-  if (parts.length === 2) {
-    try {
-      const { translate } = require("@vitalets/google-translate-api");
-      const res = await translate(parts[0], { to: parts[1] });
-      await sock.sendMessage(jid, { text: `🌐 *Translated (${parts[1]}):*\n\n${res.text}` });
-    } catch (e) {
-      await sock.sendMessage(jid, { text: "❌ Translation failed." });
+    // ---- Translation command ----
+    if (lower.startsWith(".tr ")) {
+      const input = text.slice(4).trim();
+      const parts = input.split(" to ");
+      if (parts.length === 2) {
+        try {
+          const { translate } = require("@vitalets/google-translate-api");
+          const res = await translate(parts[0], { to: parts[1] });
+          await sock.sendMessage(jid, { text: `🌐 *Translated (${parts[1]}):*\n\n${res.text}` });
+          state.totalSent++;
+          incrementStat("messages_sent");
+        } catch (e) {
+          await sock.sendMessage(jid, { text: "❌ Translation failed." });
+        }
+      } else {
+        await sock.sendMessage(jid, { text: "Usage: .tr <text> to <lang>" });
+      }
+      return;
     }
-  } else {
-    await sock.sendMessage(jid, { text: "Usage: .tr <text> to <lang>" });
-  }
-  return;
-}
 
-// ---- Notes command ----
-if (lower.startsWith(".note ")) {
-  const fs = require("fs");
-  const path = "./data/notes.json";
-  const input = text.slice(6).trim();
-  const args = input.split(" ");
-  const action = args[0];
-  const content = args.slice(1).join(" ");
+    // ---- Notes command ----
+    if (lower.startsWith(".note ")) {
+      const path = "./data/notes.json";
+      const input = text.slice(6).trim();
+      const args = input.split(" ");
+      const action = args[0];
+      const content = args.slice(1).join(" ");
 
-  let data = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path)) : {};
-  if (!data[jid]) data[jid] = [];
+      if (!fs.existsSync("./data")) fs.mkdirSync("./data", { recursive: true });
 
-  if (action === "add") {
-    data[jid].push({ text: content, at: Date.now() });
-    fs.writeFileSync(path, JSON.stringify(data, null, 2));
-    await sock.sendMessage(jid, { text: "✅ Note saved!" });
-  } else if (action === "list") {
-    const list = data[jid].map((n, i) => `${i + 1}. ${n.text}`).join("\n");
-    await sock.sendMessage(jid, { text: `📝 *Your Notes:*\n\n${list || "No notes yet."}` });
-  } else if (action === "del") {
-    const idx = parseInt(content) - 1;
-    if (data[jid][idx]) {
-      data[jid].splice(idx, 1);
-      fs.writeFileSync(path, JSON.stringify(data, null, 2));
-      await sock.sendMessage(jid, { text: "🗑️ Note deleted" });
+      let data = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path)) : {};
+      if (!data[jid]) data[jid] = [];
+
+      if (action === "add") {
+        data[jid].push({ text: content, at: Date.now() });
+        fs.writeFileSync(path, JSON.stringify(data, null, 2));
+        await sock.sendMessage(jid, { text: "✅ Note saved!" });
+      } else if (action === "list") {
+        const list = data[jid].map((n, i) => `${i + 1}. ${n.text}`).join("\n");
+        await sock.sendMessage(jid, { text: `📝 *Your Notes:*\n\n${list || "No notes yet."}` });
+      } else if (action === "del") {
+        const idx = parseInt(content) - 1;
+        if (data[jid][idx]) {
+          data[jid].splice(idx, 1);
+          fs.writeFileSync(path, JSON.stringify(data, null, 2));
+          await sock.sendMessage(jid, { text: "🗑️ Note deleted" });
+        }
+      }
+      state.totalSent++;
+      incrementStat("messages_sent");
+      return;
     }
-  }
-  return;
-}
-    
-// ---- Reminder command ----
-if (lower.startsWith("/remind ")) {
-  if (!sock) return;
-  const reply = await handleRemindCommand(jid, text);
-  await sock.sendMessage(jid, { text: reply });
-  state.totalSent++;
-  incrementStat("messages_sent");
-  return;
-}
-    
+
+    // ---- Reminder command ----
+    if (lower.startsWith("/remind ")) {
+      if (!sock) return;
+      const reply = await handleRemindCommand(jid, text);
+      await sock.sendMessage(jid, { text: reply });
+      state.totalSent++;
+      incrementStat("messages_sent");
+      return;
+    }
+
     // ---- Manual song command ----
     if (lower.startsWith("song ")) {
       const songName = text.slice(5).trim();
@@ -176,6 +231,9 @@ if (lower.startsWith("/remind ")) {
     }
 
     // ---- AI reply ----
+    // Owner పంపిన "." commands కి AI reply వద్దు
+    if (isOwner) return;
+
     if (!sock) return;
     await sock.sendPresenceUpdate("composing", jid);
     const reply = await generateAIReply(jid, text);
