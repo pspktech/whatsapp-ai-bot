@@ -1,0 +1,96 @@
+whatsapp-ai-bot anedi oka personal WhatsApp bot, idi AI chat, Spotify updates, weather reports, mariyu media downloader features tho untundi. Baileys + Express tho build chesaru.
+
+✨ Features
+
+· AI Chat: Groq (LLaMA / GPT-OSS) vadadam valla Telugu/English lo human-like replies istundi.
+· Spotify Now Playing: Prati 10 seconds ki Spotify ni poll chesi, "Ippudu vintunna" updates pampistundi.
+· Weather: /weather command tho daily 7 AM ki auto report (Open-Meteo, API key avasaram ledu).
+· Media Downloader: YouTube / Instagram / X / Twitter nunchi video + audio ni yt-dlp tho download cheyochu.
+· Spotify Downloader: Spotify link paste cheste, YouTube nunchi MP3 download chestundi.
+· Admin Dashboard: Live stats (messages, AI replies, media sent, uptime) chupistundi.
+· Session Persistence: WhatsApp login data/auth lo save avutundi, restart ki QR scan avasaram ledu.
+· Noise Filter: Baileys/libsignal verbose logs ni suppress chestundi.
+
+🛠️ Prerequisites (Termux lo)
+
+Ee bot run cheyadaniki ee tools kavali:
+
+· Node.js (version 18 leda adi kante ekkuva)
+· yt-dlp (media downloader)
+· ffmpeg (audio conversion)
+· Spotify Premium (optional, "now playing" feature kosam)
+
+🚀 Quick Start (Termux Setup)
+
+1. Repository Clone Cheyandi:
+   ```bash
+   git clone https://github.com/pspktech/whatsapp-ai-bot.git
+   cd whatsapp-ai-bot
+   ```
+2. Dependencies Install Cheyandi:
+   ```bash
+   npm install
+   ```
+3. System Tools Install Cheyandi (Termux):
+   ```bash
+   pkg install yt-dlp ffmpeg
+   ```
+4. Environment Variables Setup:
+   ```bash
+   cp .env.example .env
+   ```
+   Taruvata .env file ni open chesi, mee keys (Groq API, Spotify, WhatsApp number, etc.) add cheyandi.
+5. Bot Run Cheyandi:
+   ```bash
+   npm start
+   ```
+   Modati sari run chesinappudu terminal lo QR code vastundi. Phone lo WhatsApp → Linked Devices → Link a Device ki velli scan cheyandi.
+
+🔑 Environment Variables (.env lo)
+
+Ee variables ni set cheyali:
+
+· PORT=3000
+· ADMIN_PASSWORD=change-this-password
+· GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxx
+· AI_MODEL=openai/gpt-oss-120b
+· MAX_HISTORY=10
+· PARTNER_NAME=Mummy
+· PARTNER_ALT=Potti
+· SPOTIFY_CLIENT_ID=xxxxxxxxxxxx
+· SPOTIFY_CLIENT_SECRET=xxxxxxxxxxxx
+· SPOTIFY_REFRESH_TOKEN=xxxxxxxxxxxx
+· SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/spotify/callback
+· SPOTIFY_POLL_INTERVAL=10000
+· WHATSAPP_TARGET_JID=91XXXXXXXXXX@s.whatsapp.net
+· WEATHER_CITY=Hyderabad
+
+Keys Ela Techukovali:
+
+· Groq API Key: https://console.groq.com/keys nunchi teesukovachu.
+· Spotify: Spotify Developer Dashboard lo app create chesi, Client ID, Secret, mariyu Refresh Token teesukovali.
+
+📂 Project Structure
+
+```
+whatsapp-ai-v3/
+├── index.js          # Entry point — WhatsApp setup + boot
+├── config.js         # Env vars loader
+├── logger.js         # Suppress noisy Baileys logs
+├── state.js          # Shared mutable state
+├── db.js             # SQLite (better-sqlite3)
+├── features/
+│   ├── ai.js         # Groq AI + system prompt
+│   ├── weather.js    # Open-Meteo weather
+│   ├── spotify.js    # Spotify auth + polling
+│   ├── media.js      # URL detect + yt-dlp download
+│   ├── router.js     # Message router
+│   └── admin.js      # Express routes + dashboard
+├── data/             # SQLite DB + WhatsApp auth (gitignored)
+├── .env              # Secrets (gitignored)
+└── package.json
+```
+
+
+
+Ee bot ni Termux lo setup cheyadam chala simple. Edaina step lo doubt unte adagandi!
