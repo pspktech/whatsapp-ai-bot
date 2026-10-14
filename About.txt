@@ -55,8 +55,8 @@ Ee variables ni set cheyali:
 · GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxx
 · AI_MODEL=openai/gpt-oss-120b
 · MAX_HISTORY=10
-· PARTNER_NAME=Mummy
-· PARTNER_ALT=Potti
+· PARTNER_NAME=
+· PARTNER_ALT=
 · SPOTIFY_CLIENT_ID=xxxxxxxxxxxx
 · SPOTIFY_CLIENT_SECRET=xxxxxxxxxxxx
 · SPOTIFY_REFRESH_TOKEN=xxxxxxxxxxxx
