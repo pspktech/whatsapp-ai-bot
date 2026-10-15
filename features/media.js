@@ -8,6 +8,18 @@ const { promisify } = require("util");
 
 const execFileAsync = promisify(execFile);
 
+// Path to cookies file (bot root folder lo undi)
+const COOKIES_PATH = path.join(__dirname, "..", "cookies.txt");
+
+// Common yt-dlp args (cookies + js runtime + silent)
+const COMMON_ARGS = [
+  "--cookies", COOKIES_PATH,
+  "--js-runtimes", "deno",
+  "--no-playlist",
+  "--no-warnings",
+  "--no-progress",
+];
+
 function getSupportedUrl(text) {
   if (!text) return null;
   const match = text.match(
@@ -36,10 +48,10 @@ async function downloadMedia(url) {
 
   try {
     await execFileAsync("yt-dlp", [
+      ...COMMON_ARGS,
       "-f", "bestvideo[vcodec^=avc1][ext=mp4]+bestaudio[acodec^=mp4a][ext=m4a]/best[ext=mp4]",
       "--merge-output-format", "mp4",
       "--recode-video", "mp4",
-      "--no-playlist", "--no-warnings", "--no-progress",
       "--max-filesize", "500M",
       "-o", outputTemplate, url,
     ], { timeout: 180000, maxBuffer: 1024 * 1024 * 4 });
@@ -51,6 +63,17 @@ async function downloadMedia(url) {
     const stat = fs.statSync(filePath);
     if (!stat.size) throw new Error("Downloaded file is empty");
     if (stat.size > 500 * 1024 * 1024) throw new Error("File > 500MB");
+
+    // Optional: File Manager lo kanipinchadaniki /sdcard/Download ki kuda copy cheyandi
+    try {
+      const downloadDir = "/sdcard/Download";
+      if (fs.existsSync(downloadDir)) {
+        fs.copyFileSync(filePath, path.join(downloadDir, files[0]));
+        console.log("📁 Saved to /sdcard/Download/" + files[0]);
+      }
+    } catch (err) {
+      console.log("⚠️ Could not copy to /sdcard/Download:", err.message);
+    }
 
     return { filePath, tempDir, size: stat.size };
   } catch (e) {
@@ -83,9 +106,9 @@ async function downloadAudio(url) {
     }
 
     await execFileAsync("yt-dlp", [
+      ...COMMON_ARGS,
       "-f", "bestaudio/best", "-x",
       "--audio-format", "mp3", "--audio-quality", "128K",
-      "--no-playlist", "--no-warnings", "--no-progress",
       "--max-filesize", "32M",
       "-o", outputTemplate, target,
     ], { timeout: 180000, maxBuffer: 1024 * 1024 * 4 });
@@ -97,6 +120,17 @@ async function downloadAudio(url) {
     const stat = fs.statSync(filePath);
     if (!stat.size) throw new Error("Audio file empty");
     if (stat.size > 32 * 1024 * 1024) throw new Error("Audio > 32MB");
+
+    // Optional: File Manager lo kanipinchadaniki
+    try {
+      const downloadDir = "/sdcard/Download";
+      if (fs.existsSync(downloadDir)) {
+        fs.copyFileSync(filePath, path.join(downloadDir, files[0]));
+        console.log("📁 Saved to /sdcard/Download/" + files[0]);
+      }
+    } catch (err) {
+      console.log("⚠️ Could not copy to /sdcard/Download:", err.message);
+    }
 
     return { filePath, tempDir, size: stat.size };
   } catch (e) {

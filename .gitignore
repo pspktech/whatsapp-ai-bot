@@ -8,3 +8,5 @@ index-backup.js
 node
 whatsapp-ai-v3@*
 *.log
+cookies.txt
+FETCH_HEAD

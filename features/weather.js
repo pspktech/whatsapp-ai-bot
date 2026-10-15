@@ -26,7 +26,7 @@ async function getWeather(city) {
   const { latitude, longitude, name, country, admin1 } = geo.results[0];
 
   const wRes = await fetch(
-    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
+    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true` +
     `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m` +
     `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code` +
     `&timezone=auto&forecast_days=3`
