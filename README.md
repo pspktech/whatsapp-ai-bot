@@ -1,4 +1,4 @@
-# 🤖 WhatsApp AI Bot v3
+# 🤖 WhatsApp AI Bot 
 
 Made With Love @MadhuPatel
 
