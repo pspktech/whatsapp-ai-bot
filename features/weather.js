@@ -26,7 +26,7 @@ async function getWeather(city) {
   const { latitude, longitude, name, country, admin1 } = geo.results[0];
 
   const wRes = await fetch(
-    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true` +
+    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
     `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m` +
     `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code` +
     `&timezone=auto&forecast_days=3`
@@ -71,19 +71,39 @@ async function handleWeatherCommand(body) {
   return formatWeather(data);
 }
 
-// Scheduled daily morning weather
+// Scheduled daily morning weather (once per day at \~7 AM)
 let weatherTimer = null;
+let lastWeatherSentDate = null;
+
 function startWeatherSchedule(sock, targetJid) {
+  if (!sock || !targetJid) {
+    console.log("ℹ️  Weather schedule skipped (missing sock or targetJid)");
+    return;
+  }
   if (weatherTimer) clearInterval(weatherTimer);
+
   weatherTimer = setInterval(async () => {
     const now = new Date();
-    if (now.getHours() === 7 && now.getMinutes() < 1) {
-      const data = await getWeather(DEFAULT_CITY);
-      if (data && sock) {
-        await sock.sendMessage(targetJid, { text: formatWeather(data) });
+    const today = now.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }); // YYYY-MM-DD
+    const hour = Number(
+      now.toLocaleString("en-IN", { hour: "numeric", hour12: false, timeZone: "Asia/Kolkata" })
+    );
+
+    if (hour === 7 && lastWeatherSentDate !== today) {
+      try {
+        const data = await getWeather(DEFAULT_CITY);
+        if (data && sock) {
+          await sock.sendMessage(targetJid, { text: formatWeather(data) });
+          lastWeatherSentDate = today;
+          console.log("🌤️ Daily weather sent →", targetJid);
+        }
+      } catch (e) {
+        console.error("Weather schedule error:", e.message);
       }
     }
   }, 60 * 1000);
+
+  console.log("🌤️ Weather schedule started (daily \~7 AM IST) →", targetJid);
 }
 
 module.exports = {
