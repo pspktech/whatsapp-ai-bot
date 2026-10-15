@@ -54,7 +54,8 @@ async function processMessage(msg) {
     state.totalReceived++;
     incrementStat("messages_received");
 
-    if (env.WHATSAPP_TARGET_JID && jid === env.WHATSAPP_TARGET_JID) return;
+    // Do NOT ignore WHATSAPP_TARGET_JID — that is the partner number.
+    // Bot should reply to partner. TARGET is only used for outbound Spotify/weather.
 
     const lower = text.toLowerCase().trim();
 
@@ -121,7 +122,7 @@ async function processMessage(msg) {
         try {
           const { translate } = require("@vitalets/google-translate-api");
           const res = await translate(parts[0], { to: parts[1] });
-          await sock.sendMessage(jid, { text: `🌐 *Translated (${parts[1]}):*\n\n${res.text}` });
+          await sock.sendMessage(jid, { text: `🌐 *Translated (\( {parts[1]}):*\n\n \){res.text}` });
           state.totalSent++;
           incrementStat("messages_sent");
         } catch (e) {
