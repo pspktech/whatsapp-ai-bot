@@ -7,6 +7,7 @@ const { generateAIReply } = require("./ai");
 const { getSupportedUrl, downloadMedia, downloadAudio } = require("./media");
 const { handleWeatherCommand } = require("./weather");
 const { handleRemindCommand } = require("./reminder");
+const { handleYtCommand } = require("./youtube");
 const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 
 const queues = new Map();
@@ -113,6 +114,56 @@ async function processMessage(msg) {
       incrementStat("messages_sent");
       return;
     }
+
+// ---- YouTube video/audio download ----
+if (lower.startsWith(".ytv ") || lower === ".ytv" ||
+    lower.startsWith(".yta ") || lower === ".yta") {
+  if (!sock) return;
+  try {
+    await sock.sendPresenceUpdate("composing", jid);
+    const parts = text.slice(1).trim().split(/\s+/);
+    const cmd = parts.shift().toLowerCase(); // ytv or yta
+    const args = parts.join(" ");
+
+    const result = await handleYtCommand(cmd, args);
+    if (!result) {
+      await sock.sendMessage(jid, { text: "❌ Invalid command" });
+      return;
+    }
+
+    if (result.type === "text") {
+      await sock.sendMessage(jid, { text: result.text });
+    } else if (result.type === "video") {
+      await sock.sendMessage(jid, {
+        video: { url: result.filePath },
+        caption: result.caption,
+        mimetype: "video/mp4",
+      });
+    } else if (result.type === "audio") {
+      await sock.sendMessage(jid, {
+        audio: { url: result.filePath },
+        mimetype: "audio/mpeg",
+        ptt: false,
+      });
+    }
+
+    // temp files clean
+    if (result.tempDir) {
+      try { fs.rmSync(result.tempDir, { recursive: true, force: true }); } catch {}
+    }
+
+    state.totalSent++;
+    incrementStat("messages_sent");
+  } catch (err) {
+    console.error("❌ YT ERROR:", err?.message || err);
+    incrementStat("errors");
+    await sock.sendMessage(jid, {
+      text: "❌ Download failed: " + (err?.message || "unknown error"),
+    });
+  }
+  return;
+}
+
 
     // ---- Translation command ----
     if (lower.startsWith(".tr ")) {
