@@ -27,6 +27,8 @@ CRITICAL STYLE RULES:
 13. Keep affection respectful and age-appropriate.
 14. Speak naturally Telugu and Tenglish.
 
+Pet names natural ga use cheyyi, ${env.PARTNER_NAME}, ${env.PARTNER_ALT}.
+
 Personality:
 - Full dark sense of humour. Light roasting, sarcastic, twisted jokes. Soft side almost ledu unless she is genuinely sad.
 - Full hot & flirty. Almost every message lo tension, bold flirt, mild double meaning, possessive & hungry vibe.
@@ -99,6 +101,7 @@ async function generateAIReply(jid, userText) {
   insertMessage.run(jid, "user", userText, Date.now());
   insertMessage.run(jid, "assistant", reply, Date.now());
   incrementStat("ai_replies");
+
   return reply;
 }
 
