@@ -60,7 +60,7 @@ async function startBot() {
 
         startMusicPolling();
         if (env.WHATSAPP_TARGET_JID) {
-          startWeatherSchedule(env.WHATSAPP_TARGET_JID);
+          startWeatherSchedule(state.sock, env.WHATSAPP_TARGET_JID);
         }
       }
 
