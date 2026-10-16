@@ -115,6 +115,26 @@ async function processMessage(msg) {
       return;
     }
 
+// ---- AI ON/OFF toggle ----
+if (lower === ".ai on" || lower === ".ai off" || lower === ".ai") {
+  if (!sock) return;
+  if (lower === ".ai on") {
+    state.aiEnabled = true;
+    await sock.sendMessage(jid, { text: "✅ AI reply ON" });
+  } else if (lower === ".ai off") {
+    state.aiEnabled = false;
+    await sock.sendMessage(jid, { text: "🔴 AI reply OFF" });
+  } else {
+    await sock.sendMessage(jid, {
+      text: `AI status: *${state.aiEnabled ? "ON ✅" : "OFF 🔴"}*\n\nUsage: \`.ai on\` or \`.ai off\``,
+    });
+  }
+  state.totalSent++;
+  incrementStat("messages_sent");
+  return;
+}
+
+
 // ---- YouTube video/audio download ----
 if (lower.startsWith(".ytv ") || lower === ".ytv" ||
     lower.startsWith(".yta ") || lower === ".yta") {
@@ -286,6 +306,7 @@ if (lower.startsWith(".ytv ") || lower === ".ytv" ||
     // Owner పంపిన "." commands కి AI reply వద్దు
     if (isOwner) return;
 
+    if (!state.aiEnabled) return;
     if (!sock) return;
     await sock.sendPresenceUpdate("composing", jid);
     const reply = await generateAIReply(jid, text);
