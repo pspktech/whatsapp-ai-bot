@@ -115,6 +115,33 @@ async function processMessage(msg) {
       return;
     }
 
+// ---- AFK (Away From Keyboard) ----
+if (lower === ".afk" || lower.startsWith(".afk ")) {
+  if (!sock) return;
+  const reason = text.slice(4).trim();
+  
+  if (reason.toLowerCase() === "off") {
+    state.afk = false;
+    state.afkReason = "";
+    const since = state.afkSince ? Math.floor((Date.now() - state.afkSince) / 1000) : 0;
+    const dur = since > 0 ? ` (was away ${Math.floor(since / 60)}m)` : "";
+    state.afkSince = 0;
+    await sock.sendMessage(jid, { text: `✅ AFK mode OFF${dur}` });
+  } else {
+    state.afk = true;
+    state.afkReason = reason || "No reason";
+    state.afkSince = Date.now();
+    await sock.sendMessage(jid, {
+      text: `💤 AFK mode ON\n📝 Reason: _${state.afkReason}_\n\n_(Any message you send will turn it off)_`,
+    });
+  }
+  
+  state.totalSent++;
+  incrementStat("messages_sent");
+  return;
+}
+
+
 // ---- AI ON/OFF toggle ----
 if (lower === ".ai on" || lower === ".ai off" || lower === ".ai") {
   if (!sock) return;
@@ -301,6 +328,31 @@ if (lower.startsWith(".ytv ") || lower === ".ytv" ||
         return;
       }
     }
+
+// ---- AFK auto-reply (for non-owner messages) ----
+if (!isOwner && state.afk) {
+  if (!sock) return;
+  const since = Math.floor((Date.now() - state.afkSince) / 1000);
+  const mins = Math.floor(since / 60);
+  const dur = mins > 0 ? `${mins}m` : `${since}s`;
+  
+  await sock.sendMessage(jid, {
+    text: `💤 *Currently AFK* (${dur} ago)\n📝 _${state.afkReason || "No reason"}_\n\n_I'll reply when I'm back._`,
+  }, { quoted: msg });
+  
+  state.totalSent++;
+  incrementStat("messages_sent");
+  return;
+}
+
+// ---- Owner message → auto OFF AFK ----
+if (isOwner && state.afk && text && !text.startsWith(".")) {
+  state.afk = false;
+  state.afkReason = "";
+  state.afkSince = 0;
+  // Continue to normal processing (AI reply etc.)
+}
+
 
     // ---- AI reply ----
     // Owner పంపిన "." commands కి AI reply వద్దు
