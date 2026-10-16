@@ -45,8 +45,8 @@ async function processMessage(msg) {
     const text = extractMessageText(msg.message).trim();
     const isOwner = msg.key?.fromMe;
 
-    // Owner పంపిన మెసేజ్ అయినా, "." తో మొదలైతే process చేయి
-    // (మిగతావి ignore — infinite loop ఆపడానికి)
+    // Owner పంపిన "." commands మాత్రమే process చేయి.
+    // (infinite loop ఆపడానికి)
     if (isOwner && !text.startsWith(".")) return;
 
     if (!text) return;
@@ -54,9 +54,6 @@ async function processMessage(msg) {
     console.log("📩 JID:", jid, "| Msg:", text);
     state.totalReceived++;
     incrementStat("messages_received");
-
-    // Do NOT ignore WHATSAPP_TARGET_JID — that is the partner number.
-    // Bot should reply to partner. TARGET is only used for outbound Spotify/weather.
 
     const lower = text.toLowerCase().trim();
 
@@ -66,7 +63,7 @@ async function processMessage(msg) {
       try {
         const ctx = msg.message?.extendedTextMessage?.contextInfo;
 
-        // కేస్ 1: ఫోటోకి రిప్లై ఇచ్చి బోట్ PP సెట్ చేయడం
+        // Reply to image → set PP
         if (ctx?.quotedMessage?.imageMessage) {
           const buffer = await downloadMediaMessage(
             { message: ctx.quotedMessage, key: msg.key },
@@ -80,7 +77,7 @@ async function processMessage(msg) {
           return;
         }
 
-        // కేస్ 2: మెన్షన్ చేసిన యూజర్ PP తీసుకోవడం
+        // Mention → get PP
         const mentioned = ctx?.mentionedJid?.[0];
         if (mentioned) {
           try {
@@ -94,7 +91,6 @@ async function processMessage(msg) {
           return;
         }
 
-        // కేస్ 3: ఏదీ లేకపోతే
         await sock.sendMessage(jid, {
           text: "❌ Reply to an image to set, or mention a user to get their PP.",
         });
@@ -115,102 +111,53 @@ async function processMessage(msg) {
       return;
     }
 
-// ---- AFK (Away From Keyboard) ----
-if (lower === ".afk" || lower.startsWith(".afk ")) {
-  if (!sock) return;
-  const reason = text.slice(4).trim();
-  
-  if (reason.toLowerCase() === "off") {
-    state.afk = false;
-    state.afkReason = "";
-    const since = state.afkSince ? Math.floor((Date.now() - state.afkSince) / 1000) : 0;
-    const dur = since > 0 ? ` (was away ${Math.floor(since / 60)}m)` : "";
-    state.afkSince = 0;
-    await sock.sendMessage(jid, { text: `✅ AFK mode OFF${dur}` });
-  } else {
-    state.afk = true;
-    state.afkReason = reason || "No reason";
-    state.afkSince = Date.now();
-    await sock.sendMessage(jid, {
-      text: `💤 AFK mode ON\n📝 Reason: _${state.afkReason}_\n\n_(Any message you send will turn it off)_`,
-    });
-  }
-  
-  state.totalSent++;
-  incrementStat("messages_sent");
-  return;
-}
+    // ---- YouTube video/audio download ----
+    if (lower.startsWith(".ytv ") || lower === ".ytv" ||
+        lower.startsWith(".yta ") || lower === ".yta") {
+      if (!sock) return;
+      try {
+        await sock.sendPresenceUpdate("composing", jid);
+        const parts = text.slice(1).trim().split(/\s+/);
+        const cmd = parts.shift().toLowerCase();
+        const args = parts.join(" ");
 
+        const result = await handleYtCommand(cmd, args);
+        if (!result) {
+          await sock.sendMessage(jid, { text: "❌ Invalid command" });
+          return;
+        }
 
-// ---- AI ON/OFF toggle ----
-if (lower === ".ai on" || lower === ".ai off" || lower === ".ai") {
-  if (!sock) return;
-  if (lower === ".ai on") {
-    state.aiEnabled = true;
-    await sock.sendMessage(jid, { text: "✅ AI reply ON" });
-  } else if (lower === ".ai off") {
-    state.aiEnabled = false;
-    await sock.sendMessage(jid, { text: "🔴 AI reply OFF" });
-  } else {
-    await sock.sendMessage(jid, {
-      text: `AI status: *${state.aiEnabled ? "ON ✅" : "OFF 🔴"}*\n\nUsage: \`.ai on\` or \`.ai off\``,
-    });
-  }
-  state.totalSent++;
-  incrementStat("messages_sent");
-  return;
-}
+        if (result.type === "text") {
+          await sock.sendMessage(jid, { text: result.text });
+        } else if (result.type === "video") {
+          await sock.sendMessage(jid, {
+            video: { url: result.filePath },
+            caption: result.caption,
+            mimetype: "video/mp4",
+          });
+        } else if (result.type === "audio") {
+          await sock.sendMessage(jid, {
+            audio: { url: result.filePath },
+            mimetype: "audio/mpeg",
+            ptt: false,
+          });
+        }
 
+        if (result.tempDir) {
+          try { fs.rmSync(result.tempDir, { recursive: true, force: true }); } catch {}
+        }
 
-// ---- YouTube video/audio download ----
-if (lower.startsWith(".ytv ") || lower === ".ytv" ||
-    lower.startsWith(".yta ") || lower === ".yta") {
-  if (!sock) return;
-  try {
-    await sock.sendPresenceUpdate("composing", jid);
-    const parts = text.slice(1).trim().split(/\s+/);
-    const cmd = parts.shift().toLowerCase(); // ytv or yta
-    const args = parts.join(" ");
-
-    const result = await handleYtCommand(cmd, args);
-    if (!result) {
-      await sock.sendMessage(jid, { text: "❌ Invalid command" });
+        state.totalSent++;
+        incrementStat("messages_sent");
+      } catch (err) {
+        console.error("❌ YT ERROR:", err?.message || err);
+        incrementStat("errors");
+        await sock.sendMessage(jid, {
+          text: "❌ Download failed: " + (err?.message || "unknown error"),
+        });
+      }
       return;
     }
-
-    if (result.type === "text") {
-      await sock.sendMessage(jid, { text: result.text });
-    } else if (result.type === "video") {
-      await sock.sendMessage(jid, {
-        video: { url: result.filePath },
-        caption: result.caption,
-        mimetype: "video/mp4",
-      });
-    } else if (result.type === "audio") {
-      await sock.sendMessage(jid, {
-        audio: { url: result.filePath },
-        mimetype: "audio/mpeg",
-        ptt: false,
-      });
-    }
-
-    // temp files clean
-    if (result.tempDir) {
-      try { fs.rmSync(result.tempDir, { recursive: true, force: true }); } catch {}
-    }
-
-    state.totalSent++;
-    incrementStat("messages_sent");
-  } catch (err) {
-    console.error("❌ YT ERROR:", err?.message || err);
-    incrementStat("errors");
-    await sock.sendMessage(jid, {
-      text: "❌ Download failed: " + (err?.message || "unknown error"),
-    });
-  }
-  return;
-}
-
 
     // ---- Translation command ----
     if (lower.startsWith(".tr ")) {
@@ -220,7 +167,9 @@ if (lower.startsWith(".ytv ") || lower === ".ytv" ||
         try {
           const { translate } = require("@vitalets/google-translate-api");
           const res = await translate(parts[0], { to: parts[1] });
-          await sock.sendMessage(jid, { text: `🌐 *Translated (\( {parts[1]}):*\n\n \){res.text}` });
+          await sock.sendMessage(jid, {
+            text: `🌐 *Translated (${parts[1]}):*\n\n${res.text}`,
+          });
           state.totalSent++;
           incrementStat("messages_sent");
         } catch (e) {
@@ -329,36 +278,8 @@ if (lower.startsWith(".ytv ") || lower === ".ytv" ||
       }
     }
 
-// ---- AFK auto-reply (for non-owner messages) ----
-if (!isOwner && state.afk) {
-  if (!sock) return;
-  const since = Math.floor((Date.now() - state.afkSince) / 1000);
-  const mins = Math.floor(since / 60);
-  const dur = mins > 0 ? `${mins}m` : `${since}s`;
-  
-  await sock.sendMessage(jid, {
-    text: `💤 *Currently AFK* (${dur} ago)\n📝 _${state.afkReason || "No reason"}_\n\n_I'll reply when I'm back._`,
-  }, { quoted: msg });
-  
-  state.totalSent++;
-  incrementStat("messages_sent");
-  return;
-}
-
-// ---- Owner message → auto OFF AFK ----
-if (isOwner && state.afk && text && !text.startsWith(".")) {
-  state.afk = false;
-  state.afkReason = "";
-  state.afkSince = 0;
-  // Continue to normal processing (AI reply etc.)
-}
-
-
     // ---- AI reply ----
-    // Owner పంపిన "." commands కి AI reply వద్దు
     if (isOwner) return;
-
-    if (!state.aiEnabled) return;
     if (!sock) return;
     await sock.sendPresenceUpdate("composing", jid);
     const reply = await generateAIReply(jid, text);
