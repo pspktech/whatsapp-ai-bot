@@ -8,6 +8,8 @@ const { getSupportedUrl, downloadMedia, downloadAudio } = require("./media");
 const { handleWeatherCommand } = require("./weather");
 const { handleRemindCommand } = require("./reminder");
 const { handleYtCommand } = require("./youtube");
+const { handleAfkCommand, sendAfkReply, clearAfkIfOwner } = require("./afk");
+const { handleAiToggleCommand, isAiEnabled } = require("./ai-toggle");
 const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 
 const queues = new Map();
@@ -45,11 +47,13 @@ async function processMessage(msg) {
     const text = extractMessageText(msg.message).trim();
     const isOwner = msg.key?.fromMe;
 
-    // Owner పంపిన "." commands మాత్రమే process చేయి.
-    // (infinite loop ఆపడానికి)
-    if (isOwner && !text.startsWith(".")) return;
-
     if (!text) return;
+
+    // ---- Owner "normal" message → clear AFK and return ----
+    if (isOwner && !text.startsWith(".")) {
+      clearAfkIfOwner(text);
+      return;
+    }
 
     console.log("📩 JID:", jid, "| Msg:", text);
     state.totalReceived++;
@@ -63,7 +67,6 @@ async function processMessage(msg) {
       try {
         const ctx = msg.message?.extendedTextMessage?.contextInfo;
 
-        // Reply to image → set PP
         if (ctx?.quotedMessage?.imageMessage) {
           const buffer = await downloadMediaMessage(
             { message: ctx.quotedMessage, key: msg.key },
@@ -77,7 +80,6 @@ async function processMessage(msg) {
           return;
         }
 
-        // Mention → get PP
         const mentioned = ctx?.mentionedJid?.[0];
         if (mentioned) {
           try {
@@ -110,6 +112,12 @@ async function processMessage(msg) {
       incrementStat("messages_sent");
       return;
     }
+
+    // ---- AI ON/OFF toggle ----
+    if (await handleAiToggleCommand(sock, jid, text)) return;
+
+    // ---- AFK command ----
+    if (await handleAfkCommand(sock, jid, text)) return;
 
     // ---- YouTube video/audio download ----
     if (lower.startsWith(".ytv ") || lower === ".ytv" ||
@@ -278,9 +286,14 @@ async function processMessage(msg) {
       }
     }
 
+    // ---- AFK auto-reply (non-owner) ----
+    if (!isOwner && (await sendAfkReply(sock, jid, msg))) return;
+
     // ---- AI reply ----
     if (isOwner) return;
+    if (!isAiEnabled()) return;
     if (!sock) return;
+
     await sock.sendPresenceUpdate("composing", jid);
     const reply = await generateAIReply(jid, text);
     const delay = Math.min(1800, Math.max(500, reply.length * 18));
