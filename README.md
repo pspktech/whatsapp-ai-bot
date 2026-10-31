@@ -52,6 +52,7 @@ A personal WhatsApp bot with AI replies, YouTube/Instagram downloads, Spotify au
 
 ### 🌐 Admin Dashboard
 - Web UI: `http://127.0.0.1:3000/admin`
+- Projects page: `http://127.0.0.1:3000/projects`
 - Stats: uptime, RAM, messages, errors
 - Password protected
 

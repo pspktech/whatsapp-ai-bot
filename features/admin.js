@@ -6,6 +6,7 @@ const fs = require("fs");
 const env = require("../config");
 const state = require("../state");
 const { db, getStat } = require("../db");
+const { createProjectsPage } = require("./projects");
 
 const adminTokens = new Set();
 const SPOTIFY_SCOPES = "user-read-currently-playing user-read-playback-state";
@@ -95,8 +96,13 @@ function createApp() {
 a{color:#4ade80;}</style></head><body>
 <div class="box"><h2>WhatsApp AI Bot</h2>
 <p>Status: <strong>${state.isConnected ? "ONLINE" : "OFFLINE"}</strong></p>
-<p><a href="/admin">Admin Dashboard</a></p></div></body></html>
+<p><a href="/admin">Admin Dashboard</a></p>
+<p><a href="/projects">View Projects</a></p></div></body></html>
     `);
+  });
+
+  app.get("/projects", (req, res) => {
+    res.send(createProjectsPage());
   });
 
   app.get("/admin", (req, res) => {
@@ -173,6 +179,7 @@ button{margin-top:20px;padding:12px 20px;border:0;border-radius:10px;cursor:poin
 </style></head><body>
 <header><h2>WhatsApp AI Admin</h2></header>
 <div class="container">
+<p><a href="/projects" style="color:#c9f36b;">View Projects →</a></p>
 <div class="status">Bot Status: <strong id="status">...</strong></div>
 <div class="grid">
 <div class="card">Messages Received<div class="number" id="received">0</div></div>
