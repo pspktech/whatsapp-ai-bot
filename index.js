@@ -47,6 +47,7 @@ async function startSession(sessionName) {
       printQRInTerminal: false,
       browser: ["Ubuntu", "Chrome", "20.0.04"],
       syncFullHistory: false,
+      markOnlineOnConnect: false, // 👈 Online status hide chestundi
     });
 
     if (!state.sockets) state.sockets = new Map();
@@ -60,7 +61,7 @@ async function startSession(sessionName) {
 
     sessionSock.ev.on("creds.update", saveCreds);
 
-    sessionSock.ev.on("connection.update", (update) => {
+    sessionSock.ev.on("connection.update", async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
@@ -71,9 +72,18 @@ async function startSession(sessionName) {
       if (connection === "open") {
         console.log(`✅ [${sessionName}] WhatsApp connected`);
 
+        // 👇 Force Offline (Online kanipinchakunda)
+        try {
+          await sessionSock.sendPresenceUpdate("unavailable");
+        } catch (e) {}
+
+        // 👇 Dashboard Status Fix (Edaina okka session open unte chalu)
+        if (!state.sessionStatus) state.sessionStatus = new Map();
+        state.sessionStatus.set(sessionName, true);
+        state.isConnected = Array.from(state.sessionStatus.values()).some(v => v === true);
+
         // Music + weather only for primary session
         if (sessionName === state.primarySession) {
-          state.isConnected = true;
           state.isStarting = false;
 
           try {
@@ -95,8 +105,12 @@ async function startSession(sessionName) {
       if (connection === "close") {
         console.log(`⚠️  [${sessionName}] Disconnected`);
 
+        // 👇 Dashboard Status Fix (Anni close aithe offline avvali)
+        if (!state.sessionStatus) state.sessionStatus = new Map();
+        state.sessionStatus.set(sessionName, false);
+        state.isConnected = Array.from(state.sessionStatus.values()).some(v => v === true);
+
         if (sessionName === state.primarySession) {
-          state.isConnected = false;
           state.isStarting = false;
           try {
             stopMusicPolling();
@@ -149,6 +163,7 @@ async function startBot() {
 
   state.primarySession = SESSIONS[0];
   state.sockets = state.sockets || new Map();
+  state.sessionStatus = state.sessionStatus || new Map();
 
   console.log(
     `🚀 Starting ${SESSIONS.length} session(s): ${SESSIONS.join(", ")}`

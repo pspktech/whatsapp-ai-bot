@@ -43,6 +43,7 @@ function extractMessageText(message) {
 async function processMessage(msg, sessionSock, sessionName) {
   const sock = sessionSock || state.sock;
   const session = sessionName || state.primarySession || "main";
+  
   try {
     if (!msg?.message) return;
 
@@ -317,31 +318,22 @@ async function processMessage(msg, sessionSock, sessionName) {
 
     let reply;
     try {
-      // Multi-session: pass session + jid + text
-      reply = await generateAIReply(session, jid, text);
-    } catch (e1) {
-      // Fallback: single-session signature
-      try {
-        reply = await generateAIReply(jid, text);
-      } catch (e2) {
-        console.error("❌ AI error:", e2.message);
-        reply = "Hmm... cheppu 🥺";
-      }
+      reply = await generateAIReply(jid, text, session);
+    } catch (err) {
+      console.error("❌ AI error:", err.message);
+      reply = "Hmm... em ayyindhi ra? 🥺";
     }
 
     if (!reply) reply = "Hmm... cheppu 🥺";
 
     const delay = Math.min(1800, Math.max(500, reply.length * 18));
     await new Promise((r) => setTimeout(r, delay));
+    
     await sock.sendMessage(jid, { text: reply });
-
-    try {
-      insertMessage.run(jid, session, "user", text, Date.now());
-      insertMessage.run(jid, session, "assistant", reply, Date.now());
-    } catch {}
 
     state.totalSent++;
     incrementStat("messages_sent");
+
   } catch (error) {
     state.totalErrors++;
     incrementStat("errors");

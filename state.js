@@ -3,6 +3,7 @@ module.exports = {
   sock: null,
   sockets: null,
   primarySession: null,
+  sessionStatus: new Map(),
   isConnected: false,
   isStarting: false,
   aiEnabled: true,
