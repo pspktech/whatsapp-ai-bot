@@ -15,6 +15,7 @@ const { handleTruthDareCommand } = require("./truth-dare");
 const { handleUtilityCommand } = require("./utility");
 const { handleAutoReply } = require("./auto-reply");
 const { handleMyAppCommand } = require("./myapp");
+const { handleAboutResumeCommand } = require("./about-resume");
 const {
   cacheIncomingMessage,
   handleDeletedMessage,
@@ -84,6 +85,7 @@ async function processMessage(msg, sessionSock, sessionName) {
 
     // ---- Small utility commands ----
     if (await handleMyAppCommand(sock, jid, text)) return;
+    if (await handleAboutResumeCommand(sock, jid, text)) return;
     if (await handleUtilityCommand(sock, jid, text)) return;
 
     // ---- Truth or Dare ----
