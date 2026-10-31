@@ -25,8 +25,23 @@ async function lastfmRequest(params) {
     api_key: env.LASTFM_API_KEY,
     format: "json",
   });
-  const response = await fetch(`${LASTFM_API_URL}?${query}`);
-  const data = await response.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  let response;
+  let data;
+  try {
+    response = await fetch(`${LASTFM_API_URL}?${query}`, {
+      signal: controller.signal,
+    });
+    data = await response.json();
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("Last.fm API request timed out after 10 seconds");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
   if (!response.ok || data.error) {
     throw new Error(data.message || `Last.fm API error (${response.status})`);
   }
@@ -178,6 +193,8 @@ function startLastfmPolling(sock) {
 async function handleLastfmCommand(sock, jid, text) {
   if (text.toLowerCase().trim() !== ".lfm") return false;
 
+  console.log(`📡 Last.fm recent tracks requested by ${jid}`);
+
   if (!hasLastfmConfig()) {
     await sock.sendMessage(jid, {
       text: [
@@ -191,6 +208,7 @@ async function handleLastfmCommand(sock, jid, text) {
 
   try {
     const tracks = await getRecentTracks(10);
+    console.log(`📡 Last.fm returned ${tracks.length} recent track(s)`);
     await sock.sendMessage(jid, { text: formatRecentTracks(tracks) });
   } catch (error) {
     console.error("Last.fm recent tracks error:", error.message);
