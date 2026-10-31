@@ -10,6 +10,8 @@ const env = {
 
   PARTNER_NAME: process.env.PARTNER_NAME || "Mummy",
   PARTNER_ALT: process.env.PARTNER_ALT || "Potti",
+  OWNER_NAME: process.env.OWNER_NAME || "Madhu Patel",
+  OWNER_SITE: process.env.OWNER_SITE || "https://madhupatel.is-a.dev",
 
   SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
   SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,

@@ -11,6 +11,14 @@ const { handleYtCommand } = require("./youtube");
 const { handleAfkCommand, sendAfkReply, clearAfkIfOwner } = require("./afk");
 const { handleAiToggleCommand, isAiEnabled } = require("./ai-toggle");
 const { downloadMediaMessage } = require("@whiskeysockets/baileys");
+const { handleTruthDareCommand } = require("./truth-dare");
+const { handleUtilityCommand } = require("./utility");
+const { handleAutoReply } = require("./auto-reply");
+const {
+  cacheIncomingMessage,
+  handleDeletedMessage,
+  handleViewOnceCommand,
+} = require("./message-cache");
 
 const queues = new Map();
 
@@ -49,6 +57,8 @@ async function processMessage(msg, sessionSock, sessionName) {
 
     const jid = msg.key?.remoteJid;
     if (!jid) return;
+    if (await handleDeletedMessage(sock, msg)) return;
+    cacheIncomingMessage(msg);
     if (jid.endsWith("@g.us") || jid === "status@broadcast") return;
 
     const text = extractMessageText(msg.message).trim();
@@ -67,6 +77,15 @@ async function processMessage(msg, sessionSock, sessionName) {
     incrementStat("messages_received");
 
     const lower = text.toLowerCase().trim();
+
+    // ---- View-once save (reply to a view-once image/video with .vv) ----
+    if (await handleViewOnceCommand(sock, jid, msg, text)) return;
+
+    // ---- Small utility commands ----
+    if (await handleUtilityCommand(sock, jid, text)) return;
+
+    // ---- Truth or Dare ----
+    if (await handleTruthDareCommand(sock, jid, text)) return;
 
     // ---- Profile Picture command ----
     if (lower === ".pp" || lower.startsWith(".pp ")) {
@@ -127,6 +146,9 @@ async function processMessage(msg, sessionSock, sessionName) {
 
     // ---- AFK command ----
     if (await handleAfkCommand(sock, jid, text)) return;
+
+    // ---- Fixed keyword auto-replies (before AI) ----
+    if (!isOwner && (await handleAutoReply(sock, jid, text))) return;
 
     // ---- YouTube video/audio download ----
     if (

@@ -55,6 +55,14 @@ A personal WhatsApp bot with AI replies, YouTube/Instagram downloads, Spotify au
 - Stats: uptime, RAM, messages, errors
 - Password protected
 
+### 🎲 Utility and Protection Features
+- `.truth` / `.dare` — Tenglish Truth or Dare prompts
+- `.ping` — bot response check
+- `.owner` / `.info` — owner, uptime, session status and site details
+- `.vv` — reply to a view-once image/video to resend it as regular media
+- Anti-delete cache — recovers text/caption messages that the bot received before deletion
+- Keyword auto-replies — edit `features/auto-reply.js` to add fixed replies
+
 ---
 
 ## 📋 Commands Reference
@@ -75,8 +83,14 @@ A personal WhatsApp bot with AI replies, YouTube/Instagram downloads, Spotify au
 | `/weather <city>` | Weather forecast |
 | `/remind <time> <text>` | Set reminder |
 | `.pp` | Set/get profile picture |
+| `.truth` / `.dare` | Truth or Dare |
+| `.ping` | Bot latency check |
+| `.owner` / `.info` | Owner and bot information |
+| `.vv` | Save a quoted view-once image/video |
 
 Send any link from Instagram / YouTube / Twitter → auto-download.
+
+> View-once and anti-delete features only work for messages that the bot is able to receive. The bot cannot recover a message that it never received or bypass WhatsApp encryption.
 
 ---
 
