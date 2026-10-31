@@ -2,6 +2,7 @@
 const env = require("../config");
 const state = require("../state");
 const { incrementStat } = require("../db");
+const { getCurrentlyPlayingSpotify } = require("./spotify");
 
 const LASTFM_API_URL = "https://ws.audioscrobbler.com/2.0/";
 let lastfmPollTimer = null;
@@ -207,9 +208,26 @@ async function handleLastfmCommand(sock, jid, text) {
   }
 
   try {
+    let spotifyCurrent = null;
+    try {
+      spotifyCurrent = await getCurrentlyPlayingSpotify();
+    } catch (error) {
+      console.error("Spotify current track error while serving .lfm:", error.message);
+    }
     const tracks = await getRecentTracks(10);
     console.log(`📡 Last.fm returned ${tracks.length} recent track(s)`);
-    await sock.sendMessage(jid, { text: formatRecentTracks(tracks) });
+    let reply = formatRecentTracks(tracks);
+    if (spotifyCurrent?.isPlaying) {
+      reply = [
+        `▶️ *Spotify currently playing: ${spotifyCurrent.name}*`,
+        `🎤 ${spotifyCurrent.artists}`,
+        spotifyCurrent.album ? `💿 ${spotifyCurrent.album}` : "",
+        spotifyCurrent.url ? `🔗 ${spotifyCurrent.url}` : "",
+        "",
+        reply,
+      ].filter(Boolean).join("\n");
+    }
+    await sock.sendMessage(jid, { text: reply });
   } catch (error) {
     console.error("Last.fm recent tracks error:", error.message);
     await sock.sendMessage(jid, { text: `❌ Last.fm error: ${error.message}` });

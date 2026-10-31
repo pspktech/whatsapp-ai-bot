@@ -50,13 +50,27 @@ async function getSpotifyAccessToken() {
 }
 
 async function getCurrentlyPlayingSpotify() {
-  const token = await getSpotifyAccessToken();
-  const res = await fetch(
+  let token = await getSpotifyAccessToken();
+  let res = await fetch(
     "https://api.spotify.com/v1/me/player/currently-playing",
     { headers: { Authorization: `Bearer ${token}` } }
   );
+
+  if (res.status === 401) {
+    spotifyAccessToken = null;
+    spotifyTokenExpiry = 0;
+    token = await getSpotifyAccessToken();
+    res = await fetch(
+      "https://api.spotify.com/v1/me/player/currently-playing",
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
   if (res.status === 204) return null;
-  if (!res.ok) return null;
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Spotify currently-playing failed (${res.status}): ${errorText}`);
+  }
 
   const data = await res.json();
   if (!data || !data.item) return null;
