@@ -11,14 +11,18 @@ const execFileAsync = promisify(execFile);
 // Path to cookies file (bot root folder lo undi)
 const COOKIES_PATH = path.join(__dirname, "..", "cookies.txt");
 
-// Common yt-dlp args (cookies + js runtime + silent)
+// Common yt-dlp args. Cookies are optional; private/login-required media may
+// still need a valid cookies.txt file in the project root.
 const COMMON_ARGS = [
-  "--cookies", COOKIES_PATH,
   "--js-runtimes", "deno",
   "--no-playlist",
   "--no-warnings",
   "--no-progress",
 ];
+
+if (fs.existsSync(COOKIES_PATH)) {
+  COMMON_ARGS.unshift("--cookies", COOKIES_PATH);
+}
 
 function getSupportedUrl(text) {
   if (!text) return null;

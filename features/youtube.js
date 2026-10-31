@@ -10,12 +10,15 @@ const execFileAsync = promisify(execFile);
 const COOKIES_PATH = path.join(__dirname, "..", "cookies.txt");
 
 const COMMON_ARGS = [
-  "--cookies", COOKIES_PATH,
   "--js-runtimes", "deno",
   "--no-playlist",
   "--no-warnings",
   "--no-progress",
 ];
+
+if (fs.existsSync(COOKIES_PATH)) {
+  COMMON_ARGS.unshift("--cookies", COOKIES_PATH);
+}
 
 const YT_URL_RE =
   /https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?.*v=|shorts\/|embed\/|v\/)|youtu\.be\/)[-_0-9A-Za-z]{11}[^\s]*/i;

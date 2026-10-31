@@ -15,7 +15,7 @@ whatsapp-ai-bot anedi oka personal WhatsApp bot, idi AI chat, Spotify updates, w
 
 Ee bot run cheyadaniki ee tools kavali:
 
-· Node.js (version 18 leda adi kante ekkuva)
+· Node.js (version 20 leda adi kante ekkuva; better-sqlite3 kosam required)
 · yt-dlp (media downloader)
 · ffmpeg (audio conversion)
 · Spotify Premium (optional, "now playing" feature kosam)

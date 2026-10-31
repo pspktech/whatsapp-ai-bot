@@ -105,5 +105,10 @@ cd whatsapp-ai-bot
 
 # Install dependencies
 npm install
-npm install-scripts approve --all
-npm rebuild better-sqlite3
+
+# If better-sqlite3 reports a missing native binding
+npm rebuild better-sqlite3 --build-from-source
+
+# Create your environment file
+cp .env.example .env
+```
