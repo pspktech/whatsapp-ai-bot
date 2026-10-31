@@ -21,6 +21,7 @@ const env = {
     "http://127.0.0.1:3000/spotify/callback",
 
   WHATSAPP_TARGET_JID: process.env.WHATSAPP_TARGET_JID,
+  WHATSAPP_SESSIONS: process.env.WHATSAPP_SESSIONS || "main",
   WEATHER_CITY: process.env.WEATHER_CITY || "Hyderabad",
 };
 

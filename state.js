@@ -1,6 +1,8 @@
 // state.js — shared mutable state
 module.exports = {
   sock: null,
+  sockets: null,
+  primarySession: null,
   isConnected: false,
   isStarting: false,
   aiEnabled: true,

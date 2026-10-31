@@ -14,12 +14,15 @@ const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 
 const queues = new Map();
 
-function enqueue(jid, task) {
-  const prev = queues.get(jid) || Promise.resolve();
-  const next = prev.catch(() => {}).then(task).finally(() => {
-    if (queues.get(jid) === next) queues.delete(jid);
-  });
-  queues.set(jid, next);
+function enqueue(key, task) {
+  const prev = queues.get(key) || Promise.resolve();
+  const next = prev
+    .catch(() => {})
+    .then(task)
+    .finally(() => {
+      if (queues.get(key) === next) queues.delete(key);
+    });
+  queues.set(key, next);
   return next;
 }
 
@@ -30,13 +33,16 @@ function extractMessageText(message) {
   if (message.imageMessage?.caption) return message.imageMessage.caption;
   if (message.videoMessage?.caption) return message.videoMessage.caption;
   if (message.documentMessage?.caption) return message.documentMessage.caption;
-  if (message.ephemeralMessage?.message) return extractMessageText(message.ephemeralMessage.message);
-  if (message.viewOnceMessage?.message) return extractMessageText(message.viewOnceMessage.message);
+  if (message.ephemeralMessage?.message)
+    return extractMessageText(message.ephemeralMessage.message);
+  if (message.viewOnceMessage?.message)
+    return extractMessageText(message.viewOnceMessage.message);
   return "";
 }
 
-async function processMessage(msg) {
-  const sock = state.sock;
+async function processMessage(msg, sessionSock, sessionName) {
+  const sock = sessionSock || state.sock;
+  const session = sessionName || state.primarySession || "main";
   try {
     if (!msg?.message) return;
 
@@ -49,13 +55,13 @@ async function processMessage(msg) {
 
     if (!text) return;
 
-    // ---- Owner "normal" message → clear AFK and return ----
+    // ---- Owner "normal" message → clear AFK ----
     if (isOwner && !text.startsWith(".")) {
       clearAfkIfOwner(text);
       return;
     }
 
-    console.log("📩 JID:", jid, "| Msg:", text);
+    console.log(`📩 [${session}] ${jid} | ${text}`);
     state.totalReceived++;
     incrementStat("messages_received");
 
@@ -88,7 +94,9 @@ async function processMessage(msg) {
             state.totalSent++;
             incrementStat("messages_sent");
           } catch {
-            await sock.sendMessage(jid, { text: "❌ User has no profile picture." });
+            await sock.sendMessage(jid, {
+              text: "❌ User has no profile picture.",
+            });
           }
           return;
         }
@@ -120,8 +128,12 @@ async function processMessage(msg) {
     if (await handleAfkCommand(sock, jid, text)) return;
 
     // ---- YouTube video/audio download ----
-    if (lower.startsWith(".ytv ") || lower === ".ytv" ||
-        lower.startsWith(".yta ") || lower === ".yta") {
+    if (
+      lower.startsWith(".ytv ") ||
+      lower === ".ytv" ||
+      lower.startsWith(".yta ") ||
+      lower === ".yta"
+    ) {
       if (!sock) return;
       try {
         await sock.sendPresenceUpdate("composing", jid);
@@ -152,7 +164,9 @@ async function processMessage(msg) {
         }
 
         if (result.tempDir) {
-          try { fs.rmSync(result.tempDir, { recursive: true, force: true }); } catch {}
+          try {
+            fs.rmSync(result.tempDir, { recursive: true, force: true });
+          } catch {}
         }
 
         state.totalSent++;
@@ -197,7 +211,8 @@ async function processMessage(msg) {
       const action = args[0];
       const content = args.slice(1).join(" ");
 
-      if (!fs.existsSync("./data")) fs.mkdirSync("./data", { recursive: true });
+      if (!fs.existsSync("./data"))
+        fs.mkdirSync("./data", { recursive: true });
 
       let data = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path)) : {};
       if (!data[jid]) data[jid] = [];
@@ -208,7 +223,9 @@ async function processMessage(msg) {
         await sock.sendMessage(jid, { text: "✅ Note saved!" });
       } else if (action === "list") {
         const list = data[jid].map((n, i) => `${i + 1}. ${n.text}`).join("\n");
-        await sock.sendMessage(jid, { text: `📝 *Your Notes:*\n\n${list || "No notes yet."}` });
+        await sock.sendMessage(jid, {
+          text: `📝 *Your Notes:*\n\n${list || "No notes yet."}`,
+        });
       } else if (action === "del") {
         const idx = parseInt(content) - 1;
         if (data[jid][idx]) {
@@ -239,8 +256,10 @@ async function processMessage(msg) {
         await sock.sendPresenceUpdate("composing", jid);
         const reply = `🎧 Ippudu vintunna:\n\n🎵 *${songName}*`;
         await sock.sendMessage(jid, { text: reply });
-        insertMessage.run(jid, "user", text, Date.now());
-        insertMessage.run(jid, "assistant", reply, Date.now());
+        try {
+          insertMessage.run(jid, session, "user", text, Date.now());
+          insertMessage.run(jid, session, "assistant", reply, Date.now());
+        } catch {}
         state.totalSent++;
         incrementStat("messages_sent");
         incrementStat("spotify_updates");
@@ -295,16 +314,38 @@ async function processMessage(msg) {
     if (!sock) return;
 
     await sock.sendPresenceUpdate("composing", jid);
-    const reply = await generateAIReply(jid, text);
+
+    let reply;
+    try {
+      // Multi-session: pass session + jid + text
+      reply = await generateAIReply(session, jid, text);
+    } catch (e1) {
+      // Fallback: single-session signature
+      try {
+        reply = await generateAIReply(jid, text);
+      } catch (e2) {
+        console.error("❌ AI error:", e2.message);
+        reply = "Hmm... cheppu 🥺";
+      }
+    }
+
+    if (!reply) reply = "Hmm... cheppu 🥺";
+
     const delay = Math.min(1800, Math.max(500, reply.length * 18));
     await new Promise((r) => setTimeout(r, delay));
     await sock.sendMessage(jid, { text: reply });
+
+    try {
+      insertMessage.run(jid, session, "user", text, Date.now());
+      insertMessage.run(jid, session, "assistant", reply, Date.now());
+    } catch {}
+
     state.totalSent++;
     incrementStat("messages_sent");
   } catch (error) {
     state.totalErrors++;
     incrementStat("errors");
-    console.error("Message error:", error.message);
+    console.error(`[${session}] Message error:`, error.message);
   }
 }
 

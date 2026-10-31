@@ -1,6 +1,6 @@
-// index.js — slim orchestrator
+// index.js — slim orchestrator with multi-session support
 require("dotenv").config();
-require("./logger");   // MUST be before any console usage
+require("./logger"); // MUST be before any console usage
 
 const {
   default: makeWASocket,
@@ -22,20 +22,26 @@ const { startWeatherSchedule } = require("./features/weather");
 const createApp = require("./features/admin");
 
 // ======================================================
-// WHATSAPP CONNECTION
+// SESSIONS LIST
 // ======================================================
 
-async function startBot() {
-  if (state.isStarting) return;
-  state.isStarting = true;
+const SESSIONS = (env.WHATSAPP_SESSIONS || "main")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
+// ======================================================
+// WHATSAPP CONNECTION (per session)
+// ======================================================
+
+async function startSession(sessionName) {
   try {
-    const authDir = path.join(DATA_DIR, "auth");
+    const authDir = path.join(DATA_DIR, "sessions", sessionName, "auth");
     if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
 
     const { state: authState, saveCreds } = await useMultiFileAuthState(authDir);
 
-    state.sock = makeWASocket({
+    const sessionSock = makeWASocket({
       auth: authState,
       logger: pino({ level: "silent" }),
       printQRInTerminal: false,
@@ -43,61 +49,119 @@ async function startBot() {
       syncFullHistory: false,
     });
 
-    state.sock.ev.on("creds.update", saveCreds);
+    if (!state.sockets) state.sockets = new Map();
+    state.sockets.set(sessionName, sessionSock);
 
-    state.sock.ev.on("connection.update", (update) => {
+    // First session = primary (music + weather)
+    if (!state.primarySession) state.primarySession = sessionName;
+    if (sessionName === state.primarySession) {
+      state.sock = sessionSock;
+    }
+
+    sessionSock.ev.on("creds.update", saveCreds);
+
+    sessionSock.ev.on("connection.update", (update) => {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
-        console.log("📱 Scan this QR in WhatsApp:");
+        console.log(`\n📱 [${sessionName}] Scan QR:`);
         qrcode.generate(qr, { small: true });
       }
 
       if (connection === "open") {
-        state.isConnected = true;
-        state.isStarting = false;
-        console.log("✅ WhatsApp connected");
+        console.log(`✅ [${sessionName}] WhatsApp connected`);
 
-        startMusicPolling();
-        if (env.WHATSAPP_TARGET_JID) {
-          startWeatherSchedule(state.sock, env.WHATSAPP_TARGET_JID);
+        // Music + weather only for primary session
+        if (sessionName === state.primarySession) {
+          state.isConnected = true;
+          state.isStarting = false;
+
+          try {
+            startMusicPolling();
+          } catch (e) {
+            console.error("Music polling error:", e.message);
+          }
+
+          if (env.WHATSAPP_TARGET_JID) {
+            try {
+              startWeatherSchedule(sessionSock, env.WHATSAPP_TARGET_JID);
+            } catch (e) {
+              console.error("Weather schedule error:", e.message);
+            }
+          }
         }
       }
 
       if (connection === "close") {
-        state.isConnected = false;
-        state.isStarting = false;
-        stopMusicPolling();
+        console.log(`⚠️  [${sessionName}] Disconnected`);
+
+        if (sessionName === state.primarySession) {
+          state.isConnected = false;
+          state.isStarting = false;
+          try {
+            stopMusicPolling();
+          } catch (e) {}
+        }
 
         const statusCode = lastDisconnect?.error?.output?.statusCode;
         const loggedOut = statusCode === DisconnectReason.loggedOut;
 
         if (loggedOut) {
-          console.log("🚪 Logged out. Delete ./data/auth and restart.");
+          console.log(
+            `🚪 [${sessionName}] Logged out. Delete data/sessions/${sessionName} and restart.`
+          );
           return;
         }
 
-        console.log("🔁 Reconnecting in 3s...");
-        clearTimeout(state.reconnectTimer);
-        state.reconnectTimer = setTimeout(startBot, 3000);
+        console.log(`🔁 [${sessionName}] Reconnecting in 3s...`);
+        setTimeout(() => startSession(sessionName), 3000);
       }
     });
 
-    state.sock.ev.on("messages.upsert", async (event) => {
+    sessionSock.ev.on("messages.upsert", async (event) => {
       const { messages, type } = event;
       if (type !== "notify") return;
+
       for (const msg of messages) {
         const jid = msg.key?.remoteJid;
         if (!jid) continue;
-        enqueue(jid, () => processMessage(msg));
+
+        enqueue(`${sessionName}:${jid}`, () =>
+          processMessage(msg, sessionSock, sessionName)
+        );
       }
     });
+
+    return sessionSock;
   } catch (err) {
-    state.isStarting = false;
-    console.error("startBot error:", err);
-    clearTimeout(state.reconnectTimer);
-    state.reconnectTimer = setTimeout(startBot, 5000);
+    console.error(`[${sessionName}] startSession error:`, err);
+    setTimeout(() => startSession(sessionName), 5000);
   }
+}
+
+// ======================================================
+// START ALL SESSIONS
+// ======================================================
+
+async function startBot() {
+  if (state.isStarting) return;
+  state.isStarting = true;
+
+  state.primarySession = SESSIONS[0];
+  state.sockets = state.sockets || new Map();
+
+  console.log(
+    `🚀 Starting ${SESSIONS.length} session(s): ${SESSIONS.join(", ")}`
+  );
+
+  for (const sessionName of SESSIONS) {
+    console.log(`▶️  Starting session: ${sessionName}`);
+    await startSession(sessionName);
+    // Gap between sessions (QR print avvadaniki)
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+
+  console.log("✅ All sessions initialized\n");
 }
 
 // ======================================================
@@ -118,6 +182,7 @@ startBot();
 process.on("unhandledRejection", (err) => {
   console.error("Unhandled rejection:", err);
 });
+
 process.on("uncaughtException", (err) => {
   console.error("Uncaught exception:", err);
 });
