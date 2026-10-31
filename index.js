@@ -20,6 +20,7 @@ const { processMessage, enqueue } = require("./features/router");
 const { startMusicPolling, stopMusicPolling } = require("./features/spotify");
 const { startWeatherSchedule } = require("./features/weather");
 const { startDailyAutomation, stopDailyAutomation } = require("./features/daily");
+const { startLastfmPolling, stopLastfmPolling } = require("./features/lastfm");
 const createApp = require("./features/admin");
 
 // ======================================================
@@ -101,6 +102,7 @@ async function startSession(sessionName) {
             }
           }
           startDailyAutomation(sessionSock);
+          startLastfmPolling(sessionSock);
         }
       }
 
@@ -119,6 +121,9 @@ async function startSession(sessionName) {
           } catch (e) {}
           try {
             stopDailyAutomation();
+          } catch (e) {}
+          try {
+            stopLastfmPolling();
           } catch (e) {}
         }
 

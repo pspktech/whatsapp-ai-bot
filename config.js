@@ -39,6 +39,16 @@ const env = {
   SPOTIFY_REDIRECT_URI:
     process.env.SPOTIFY_REDIRECT_URI ||
     "http://127.0.0.1:3000/spotify/callback",
+  LASTFM_API_KEY: process.env.LASTFM_API_KEY,
+  LASTFM_USERNAME: process.env.LASTFM_USERNAME,
+  LASTFM_POLL_INTERVAL: Number(process.env.LASTFM_POLL_INTERVAL || 15000),
+  LASTFM_TARGET_JID: process.env.LASTFM_TARGET_JID || "",
+  LASTFM_SCROBBLING_URL:
+    process.env.LASTFM_SCROBBLING_URL ||
+    "https://www.last.fm/about/trackmymusic",
+  LASTFM_APP_URL:
+    process.env.LASTFM_APP_URL ||
+    "https://play.google.com/store/apps/details?id=fm.last.android",
 
   WHATSAPP_TARGET_JID: process.env.WHATSAPP_TARGET_JID,
   WHATSAPP_SESSIONS: process.env.WHATSAPP_SESSIONS || "main",

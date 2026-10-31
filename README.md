@@ -68,7 +68,15 @@ A personal WhatsApp bot with AI replies, YouTube/Instagram downloads, Spotify au
 - `.contact` — Owner details or WhatsApp contact card when `OWNER_PHONE` is configured
 - `.feedback <message>` — Forward feedback to `FEEDBACK_TARGET_JID` / `OWNER_JID`
 - `.style funny|professional|romantic|telugu|normal` — Change AI reply style per chat
+- `.lfm` — Last.fm recent 10 tracks with now-playing marker and links
 - Daily 9:00 AM IST message to `DAILY_TARGET_JID` or `WHATSAPP_TARGET_JID`
+
+### 🎧 Last.fm
+- Set `LASTFM_API_KEY` and `LASTFM_USERNAME` in `.env`.
+- Connect Spotify to Last.fm from `https://www.last.fm/about/trackmymusic` so Spotify plays are scrobbled.
+- The bot polls Last.fm every 15 seconds and sends a WhatsApp message when a new `nowplaying` track appears.
+- Use `.lfm` to receive the 10 most recent tracks.
+- `LASTFM_TARGET_JID` controls the notification destination; it falls back to `WHATSAPP_TARGET_JID` and then the bot's own chat.
 - `.vv` — reply to a view-once image/video to resend it as regular media
 - Anti-delete cache — recovers text/caption messages that the bot received before deletion
 - Keyword auto-replies — edit `features/auto-reply.js` to add fixed replies

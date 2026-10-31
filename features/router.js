@@ -20,6 +20,7 @@ const { handleSocialCommand } = require("./social");
 const { handleContactCommand } = require("./contact");
 const { handleFeedbackCommand } = require("./feedback");
 const { handleAiStyleCommand } = require("./ai-style");
+const { handleLastfmCommand } = require("./lastfm");
 const {
   cacheIncomingMessage,
   handleDeletedMessage,
@@ -94,6 +95,7 @@ async function processMessage(msg, sessionSock, sessionName) {
     if (await handleContactCommand(sock, jid, text)) return;
     if (await handleFeedbackCommand(sock, jid, text)) return;
     if (await handleAiStyleCommand(sock, jid, text)) return;
+    if (await handleLastfmCommand(sock, jid, text)) return;
     if (await handleUtilityCommand(sock, jid, text)) return;
 
     // ---- Truth or Dare ----
