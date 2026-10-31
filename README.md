@@ -64,6 +64,11 @@ A personal WhatsApp bot with AI replies, YouTube/Instagram downloads, Spotify au
 - `.app` / `.myapp` — Madhu Portfolio app description and APK download page
 - `.about` — About Madhu Patel and “Overthinker hacker” profile
 - `.resume` — Skills, projects and portfolio links
+- `.social` — Portfolio, GitHub, Telegram and configured social links
+- `.contact` — Owner details or WhatsApp contact card when `OWNER_PHONE` is configured
+- `.feedback <message>` — Forward feedback to `FEEDBACK_TARGET_JID` / `OWNER_JID`
+- `.style funny|professional|romantic|telugu|normal` — Change AI reply style per chat
+- Daily 9:00 AM IST message to `DAILY_TARGET_JID` or `WHATSAPP_TARGET_JID`
 - `.vv` — reply to a view-once image/video to resend it as regular media
 - Anti-delete cache — recovers text/caption messages that the bot received before deletion
 - Keyword auto-replies — edit `features/auto-reply.js` to add fixed replies

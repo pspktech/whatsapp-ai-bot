@@ -2,6 +2,8 @@
 const OpenAI = require("openai");
 const env = require("../config");
 const { insertMessage, getHistory, incrementStat } = require("../db");
+const state = require("../state");
+const { STYLES } = require("./ai-style");
 
 const ai = new OpenAI({
   apiKey: env.GROQ_API_KEY,
@@ -26,11 +28,16 @@ RULES:
 // Multi-session support kosam signature marchanu (jid, text, session)
 async function generateAIReply(jid, userText, sessionName = "main") {
   try {
+    const selectedStyle = state.aiStyles?.get(jid) || "normal";
+    const styleInstruction = STYLES[selectedStyle] || STYLES.normal;
     // 1. History theesukovadam (session tho saha)
     const rows = getHistory.all(jid, sessionName, env.MAX_HISTORY || 10).reverse();
 
     const messages = [
-      { role: "system", content: SYSTEM_PROMPT },
+      {
+        role: "system",
+        content: `${SYSTEM_PROMPT}\nCURRENT REPLY STYLE: ${selectedStyle}. ${styleInstruction}`,
+      },
       ...rows.map((r) => ({ role: r.role, content: r.content })),
       { role: "user", content: userText },
     ];

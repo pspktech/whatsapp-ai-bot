@@ -19,6 +19,7 @@ const { DATA_DIR } = require("./db");
 const { processMessage, enqueue } = require("./features/router");
 const { startMusicPolling, stopMusicPolling } = require("./features/spotify");
 const { startWeatherSchedule } = require("./features/weather");
+const { startDailyAutomation, stopDailyAutomation } = require("./features/daily");
 const createApp = require("./features/admin");
 
 // ======================================================
@@ -99,6 +100,7 @@ async function startSession(sessionName) {
               console.error("Weather schedule error:", e.message);
             }
           }
+          startDailyAutomation(sessionSock);
         }
       }
 
@@ -114,6 +116,9 @@ async function startSession(sessionName) {
           state.isStarting = false;
           try {
             stopMusicPolling();
+          } catch (e) {}
+          try {
+            stopDailyAutomation();
           } catch (e) {}
         }
 

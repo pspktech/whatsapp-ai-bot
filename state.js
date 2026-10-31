@@ -7,6 +7,7 @@ module.exports = {
   isConnected: false,
   isStarting: false,
   aiEnabled: true,
+  aiStyles: new Map(),
   afk: false,
   afkReason: "",
   afkSince: 0,

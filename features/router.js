@@ -16,6 +16,10 @@ const { handleUtilityCommand } = require("./utility");
 const { handleAutoReply } = require("./auto-reply");
 const { handleMyAppCommand } = require("./myapp");
 const { handleAboutResumeCommand } = require("./about-resume");
+const { handleSocialCommand } = require("./social");
+const { handleContactCommand } = require("./contact");
+const { handleFeedbackCommand } = require("./feedback");
+const { handleAiStyleCommand } = require("./ai-style");
 const {
   cacheIncomingMessage,
   handleDeletedMessage,
@@ -86,6 +90,10 @@ async function processMessage(msg, sessionSock, sessionName) {
     // ---- Small utility commands ----
     if (await handleMyAppCommand(sock, jid, text)) return;
     if (await handleAboutResumeCommand(sock, jid, text)) return;
+    if (await handleSocialCommand(sock, jid, text)) return;
+    if (await handleContactCommand(sock, jid, text)) return;
+    if (await handleFeedbackCommand(sock, jid, text)) return;
+    if (await handleAiStyleCommand(sock, jid, text)) return;
     if (await handleUtilityCommand(sock, jid, text)) return;
 
     // ---- Truth or Dare ----
