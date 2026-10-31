@@ -6,6 +6,7 @@ const { incrementStat } = require("../db");
 const LASTFM_API_URL = "https://ws.audioscrobbler.com/2.0/";
 let lastfmPollTimer = null;
 let lastNowPlayingKey = null;
+let lastTrackWasNowPlaying = false;
 
 function hasLastfmConfig() {
   return Boolean(env.LASTFM_API_KEY && env.LASTFM_USERNAME);
@@ -99,7 +100,8 @@ function formatRecentTracks(tracks) {
 
 function formatNowPlaying(track) {
   const item = normaliseTrack(track);
-  let message = `🎧 *Now playing on ${env.LASTFM_USERNAME}'s Last.fm*\n\n`;
+  const heading = item.nowPlaying ? "Now playing" : "Recently played";
+  let message = `🎧 *${heading} on ${env.LASTFM_USERNAME}'s Last.fm*\n\n`;
   message += `🎵 *${item.name}*\n🎤 ${item.artist}`;
   if (item.album) message += `\n💿 ${item.album}`;
   if (item.url) message += `\n🔗 ${item.url}`;
@@ -109,11 +111,21 @@ function formatNowPlaying(track) {
 async function pollLastfm(sock, target) {
   if (!state.isConnected || !hasLastfmConfig()) return;
   const tracks = await getRecentTracks(1);
-  const current = tracks.find(isNowPlaying);
+  const current = tracks.find(isNowPlaying) || tracks[0];
   if (!current) return;
 
   const key = trackKey(current);
-  if (key === lastNowPlayingKey) return;
+  const nowPlaying = isNowPlaying(current);
+  if (key === lastNowPlayingKey && !(nowPlaying && !lastTrackWasNowPlaying)) return;
+
+  // If Last.fm does not expose @attr.nowplaying, remember the first track
+  // after startup and notify only when the most recent track changes.
+  if (!isNowPlaying(current) && lastNowPlayingKey === null) {
+    lastNowPlayingKey = key;
+    lastTrackWasNowPlaying = false;
+    console.log("ℹ️ Last.fm nowplaying flag unavailable; recent-track fallback armed");
+    return;
+  }
 
   const message = formatNowPlaying(current);
   if (message.image) {
@@ -122,8 +134,12 @@ async function pollLastfm(sock, target) {
     await sock.sendMessage(target, { text: message.text });
   }
   lastNowPlayingKey = key;
+  lastTrackWasNowPlaying = nowPlaying;
   incrementStat("lastfm_updates");
-  console.log("🎵 Last.fm update sent:", normaliseTrack(current).name);
+  console.log(
+    `${nowPlaying ? "🎵" : "🕘"} Last.fm update sent:`,
+    normaliseTrack(current).name
+  );
 }
 
 function stopLastfmPolling() {
@@ -146,6 +162,7 @@ function startLastfmPolling(sock) {
 
   stopLastfmPolling();
   lastNowPlayingKey = null;
+  lastTrackWasNowPlaying = false;
   console.log(`🎧 Last.fm polling started (every ${env.LASTFM_POLL_INTERVAL / 1000}s) → ${target}`);
 
   pollLastfm(sock, target).catch((error) =>
@@ -187,6 +204,7 @@ module.exports = {
   handleLastfmCommand,
   startLastfmPolling,
   stopLastfmPolling,
+  pollLastfm,
   formatRecentTracks,
   formatNowPlaying,
 };
