@@ -21,7 +21,7 @@ function getSessionStatus() {
 
 async function handleUtilityCommand(sock, jid, text) {
   const lower = text.toLowerCase().trim();
-  if (![".ping", ".owner", ".info"].includes(lower)) return false;
+  if (![".ping", ".owner", ".info", ".projects", ".project"].includes(lower)) return false;
 
   let reply;
   if (lower === ".ping") {
@@ -30,6 +30,30 @@ async function handleUtilityCommand(sock, jid, text) {
     console.log(`🏓 Ping handled in ${Date.now() - started}ms`);
   } else if (lower === ".owner") {
     reply = `👤 *Owner:* ${env.OWNER_NAME}\n💌 Made with love\n🌐 ${env.OWNER_SITE}`;
+  } else if (lower === ".projects" || lower === ".project") {
+    reply = [
+      "🚀 *Madhu Patel — Projects*",
+      "",
+      "1. 🤖 WhatsApp AI Bot",
+      "   https://github.com/pspktech/whatsapp-ai-bot",
+      "",
+      "2. 🫙 Nandhu Pickles",
+      "   https://nandhupickles.netlify.app",
+      "",
+      "3. 📱 MyInstaPro",
+      "   https://t.me/madhupatelpspk",
+      "",
+      "4. 👥 Vigneshwara Youth Group",
+      "   https://teamvya.netlify.app",
+      "",
+      "5. 🏠 Homecare",
+      "   https://homecare-mky9rkq0j-madhupatel.vercel.app/",
+      "",
+      "6. 📸 InstaSaver",
+      "   https://github.com/pspktech/InstaSaver/releases/latest",
+      "",
+      `🌐 Full page: ${env.PROJECTS_URL}`,
+    ].join("\n");
   } else {
     reply = [
       "🤖 *WhatsApp AI Bot*",
