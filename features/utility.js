@@ -2,6 +2,7 @@
 const state = require("../state");
 const env = require("../config");
 const { incrementStat } = require("../db");
+const { PROJECTS } = require("./projects");
 
 function formatUptime(ms) {
   const totalSeconds = Math.floor(ms / 1000);
@@ -19,6 +20,20 @@ function getSessionStatus() {
     .join(" | ");
 }
 
+function formatProjectsMessage() {
+  const lines = ["🚀 *Madhu Patel — Projects*", ""];
+  PROJECTS.forEach((project, index) => {
+    lines.push(`${index + 1}. ${project.icon} *${project.title}*`);
+    lines.push(`   ${project.description}`);
+    lines.push(`   🛠️ ${project.tags.join(", ")}`);
+    lines.push(`   🔗 Live: ${project.live || "Not available"}`);
+    lines.push(`   💻 Source: ${project.source || "Not public"}`);
+    lines.push("");
+  });
+  lines.push(`🌐 Full page: ${env.PROJECTS_URL}`);
+  return lines.join("\n");
+}
+
 async function handleUtilityCommand(sock, jid, text) {
   const lower = text.toLowerCase().trim();
   if (![".ping", ".owner", ".info", ".projects", ".project"].includes(lower)) return false;
@@ -31,29 +46,7 @@ async function handleUtilityCommand(sock, jid, text) {
   } else if (lower === ".owner") {
     reply = `👤 *Owner:* ${env.OWNER_NAME}\n💌 Made with love\n🌐 ${env.OWNER_SITE}`;
   } else if (lower === ".projects" || lower === ".project") {
-    reply = [
-      "🚀 *Madhu Patel — Projects*",
-      "",
-      "1. 🤖 WhatsApp AI Bot",
-      "   https://github.com/pspktech/whatsapp-ai-bot",
-      "",
-      "2. 🫙 Nandhu Pickles",
-      "   https://nandhupickles.netlify.app",
-      "",
-      "3. 📱 MyInstaPro",
-      "   https://t.me/madhupatelpspk",
-      "",
-      "4. 👥 Vigneshwara Youth Group",
-      "   https://teamvya.netlify.app",
-      "",
-      "5. 🏠 Homecare",
-      "   https://homecare-mky9rkq0j-madhupatel.vercel.app/",
-      "",
-      "6. 📸 InstaSaver",
-      "   https://github.com/pspktech/InstaSaver/releases/latest",
-      "",
-      `🌐 Full page: ${env.PROJECTS_URL}`,
-    ].join("\n");
+    reply = formatProjectsMessage();
   } else {
     reply = [
       "🤖 *WhatsApp AI Bot*",
@@ -73,4 +66,4 @@ async function handleUtilityCommand(sock, jid, text) {
   return true;
 }
 
-module.exports = { handleUtilityCommand, formatUptime };
+module.exports = { handleUtilityCommand, formatUptime, formatProjectsMessage };

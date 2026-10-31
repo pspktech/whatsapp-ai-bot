@@ -14,6 +14,9 @@ const env = {
   OWNER_SITE: process.env.OWNER_SITE || "https://madhupatel.is-a.dev",
   PROJECTS_URL:
     process.env.PROJECTS_URL || "https://madhupatel.is-a.dev/projects",
+  APP_URL:
+    process.env.APP_URL ||
+    "https://appsenjoy.com/f/UsjJzrGkCs/madhu-portfolio-1-1-0",
 
   SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
   SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,

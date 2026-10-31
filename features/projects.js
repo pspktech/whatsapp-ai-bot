@@ -8,7 +8,7 @@ const PROJECTS = [
     description: "An AI-powered WhatsApp bot built on Node.js with natural replies, media downloads, utility commands and automation flows.",
     tags: ["Node.js", "Express.js", "AI API", "WhatsApp Web"],
     source: "https://github.com/pspktech/whatsapp-ai-bot",
-    actionLabel: "Source",
+    live: null,
     featured: false,
   },
   {
@@ -18,8 +18,8 @@ const PROJECTS = [
     icon: "🫙",
     description: "An e-commerce website for a homemade pickles brand with product showcase, pricing and one-tap WhatsApp ordering.",
     tags: ["HTML", "CSS", "JavaScript", "Netlify"],
+    source: null,
     live: "https://nandhupickles.netlify.app",
-    actionLabel: "Live Site",
     featured: false,
   },
   {
@@ -29,8 +29,8 @@ const PROJECTS = [
     icon: "📱",
     description: "An Android app for downloading Instagram videos, reels, photos and stories without login, ads or tracking.",
     tags: ["Android", "Instagram", "Downloader", "No Watermark"],
+    source: null,
     live: "https://t.me/madhupatelpspk",
-    actionLabel: "Get the App",
     featured: true,
   },
   {
@@ -40,8 +40,8 @@ const PROJECTS = [
     icon: "👥",
     description: "A responsive community website for events, member information, photo galleries and announcements.",
     tags: ["HTML", "CSS", "JavaScript", "Netlify"],
+    source: null,
     live: "https://teamvya.netlify.app",
-    actionLabel: "Live Site",
     featured: false,
   },
   {
@@ -51,8 +51,8 @@ const PROJECTS = [
     icon: "🏠",
     description: "A modern homecare services website that guides visitors from service discovery to the next action.",
     tags: ["Web App", "Responsive UI", "Vercel"],
+    source: null,
     live: "https://homecare-mky9rkq0j-madhupatel.vercel.app/",
-    actionLabel: "Live Site",
     featured: false,
   },
   {
@@ -63,7 +63,7 @@ const PROJECTS = [
     description: "An open-source Kotlin Android app for downloading Instagram reels, posts and profile pictures with a privacy-focused flow.",
     tags: ["Kotlin", "MVVM", "Android Jetpack", "Material Design"],
     source: "https://github.com/pspktech/InstaSaver/releases/latest",
-    actionLabel: "Download APK",
+    live: null,
     featured: false,
   },
 ];
@@ -78,8 +78,13 @@ function escapeHtml(value) {
 }
 
 function projectCard(project) {
-  const link = project.live || project.source;
-  const label = project.actionLabel || (project.live ? "Live Site" : "Source");
+  const links = [];
+  if (project.live) {
+    links.push(`<a class="button primary" href="${escapeHtml(project.live)}" target="_blank" rel="noopener noreferrer">Live ↗</a>`);
+  }
+  if (project.source) {
+    links.push(`<a class="button primary" href="${escapeHtml(project.source)}" target="_blank" rel="noopener noreferrer">Source ↗</a>`);
+  }
   return `
     <article class="project-card${project.featured ? " featured" : ""}">
       ${project.featured ? '<span class="badge">New</span>' : ""}
@@ -89,7 +94,7 @@ function projectCard(project) {
         <h2>${escapeHtml(project.title)}</h2>
         <p>${escapeHtml(project.description)}</p>
         <div class="tags">${project.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>
-        <div class="actions"><a class="button primary" href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)} ↗</a></div>
+        <div class="actions">${links.join(" ") || '<span style="color:var(--muted)">Links coming soon</span>'}</div>
       </div>
     </article>`;
 }

@@ -14,6 +14,7 @@ const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 const { handleTruthDareCommand } = require("./truth-dare");
 const { handleUtilityCommand } = require("./utility");
 const { handleAutoReply } = require("./auto-reply");
+const { handleMyAppCommand } = require("./myapp");
 const {
   cacheIncomingMessage,
   handleDeletedMessage,
@@ -82,6 +83,7 @@ async function processMessage(msg, sessionSock, sessionName) {
     if (await handleViewOnceCommand(sock, jid, msg, text)) return;
 
     // ---- Small utility commands ----
+    if (await handleMyAppCommand(sock, jid, text)) return;
     if (await handleUtilityCommand(sock, jid, text)) return;
 
     // ---- Truth or Dare ----

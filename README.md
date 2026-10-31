@@ -61,6 +61,7 @@ A personal WhatsApp bot with AI replies, YouTube/Instagram downloads, Spotify au
 - `.ping` — bot response check
 - `.owner` / `.info` — owner, uptime, session status and site details
 - `.projects` — send all projects and live/source links in WhatsApp
+- `.app` / `.myapp` — Madhu Portfolio app description and APK download page
 - `.vv` — reply to a view-once image/video to resend it as regular media
 - Anti-delete cache — recovers text/caption messages that the bot received before deletion
 - Keyword auto-replies — edit `features/auto-reply.js` to add fixed replies
