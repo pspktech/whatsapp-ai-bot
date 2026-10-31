@@ -125,9 +125,10 @@ function stopMusicPolling() {
   spotifyPollTimer = null;
 }
 
-async function startMusicPolling() {
-  if (!env.WHATSAPP_TARGET_JID) {
-    console.log("ℹ️  Music polling skipped (no WHATSAPP_TARGET_JID)");
+async function startMusicPolling(sessionSock = state.sock) {
+  const target = env.WHATSAPP_TARGET_JID || sessionSock?.user?.id;
+  if (!target) {
+    console.log("ℹ️  Music polling skipped (no WhatsApp target)");
     return;
   }
   if (!env.SPOTIFY_REFRESH_TOKEN) {
@@ -137,12 +138,12 @@ async function startMusicPolling() {
 
   stopMusicPolling();
   console.log(
-    `🎧 Spotify polling started (every ${env.SPOTIFY_POLL_INTERVAL / 1000}s) → ${env.WHATSAPP_TARGET_JID}`
+    `🎧 Spotify polling started (every ${env.SPOTIFY_POLL_INTERVAL / 1000}s) → ${target}`
   );
 
   spotifyPollTimer = setInterval(async () => {
     try {
-      if (!state.sock || !state.isConnected) return;
+      if (!sessionSock || !state.isConnected) return;
 
       const track = await getCurrentlyPlayingSpotify();
       if (!track || !track.isPlaying) return;
@@ -152,12 +153,12 @@ async function startMusicPolling() {
 
       // If image available → send with album art
       if (track.image) {
-        await state.sock.sendMessage(env.WHATSAPP_TARGET_JID, {
+        await sessionSock.sendMessage(target, {
           image: { url: track.image },
           caption: formatTrackMessage(track),
         });
       } else {
-        await state.sock.sendMessage(env.WHATSAPP_TARGET_JID, {
+        await sessionSock.sendMessage(target, {
           text: formatTrackMessage(track),
         });
       }

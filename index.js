@@ -84,15 +84,9 @@ async function startSession(sessionName) {
         state.sessionStatus.set(sessionName, true);
         state.isConnected = Array.from(state.sessionStatus.values()).some(v => v === true);
 
-        // Music + weather only for primary session
+        // Weather + daily automation only for primary session.
         if (sessionName === state.primarySession) {
           state.isStarting = false;
-
-          try {
-            startMusicPolling();
-          } catch (e) {
-            console.error("Music polling error:", e.message);
-          }
 
           if (env.WHATSAPP_TARGET_JID) {
             try {
@@ -104,6 +98,12 @@ async function startSession(sessionName) {
           startDailyAutomation(sessionSock);
         }
 
+        // Music and Last.fm can use any connected session when primary is logged out.
+        try {
+          startMusicPolling(sessionSock);
+        } catch (e) {
+          console.error("Music polling error:", e.message);
+        }
         // Last.fm can use any connected session when the primary session is logged out.
         startLastfmPolling(sessionSock);
       }
@@ -119,14 +119,14 @@ async function startSession(sessionName) {
         if (sessionName === state.primarySession) {
           state.isStarting = false;
           try {
-            stopMusicPolling();
-          } catch (e) {}
-          try {
             stopDailyAutomation();
           } catch (e) {}
         }
 
         if (!state.isConnected) {
+          try {
+            stopMusicPolling();
+          } catch (e) {}
           try {
             stopLastfmPolling();
           } catch (e) {}
