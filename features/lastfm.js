@@ -11,6 +11,13 @@ function hasLastfmConfig() {
   return Boolean(env.LASTFM_API_KEY && env.LASTFM_USERNAME);
 }
 
+function normalizeJid(value) {
+  if (!value) return value;
+  if (String(value).includes("@")) return value;
+  const digits = String(value).replace(/\D/g, "");
+  return digits ? `${digits}@s.whatsapp.net` : value;
+}
+
 async function lastfmRequest(params) {
   const query = new URLSearchParams({
     ...params,
@@ -129,7 +136,9 @@ function startLastfmPolling(sock) {
     console.log("ℹ️ Last.fm polling skipped (set LASTFM_API_KEY and LASTFM_USERNAME)");
     return;
   }
-  const target = env.LASTFM_TARGET_JID || env.WHATSAPP_TARGET_JID || sock?.user?.id;
+  const target = normalizeJid(
+    env.LASTFM_TARGET_JID || env.WHATSAPP_TARGET_JID || sock?.user?.id
+  );
   if (!target) {
     console.log("ℹ️ Last.fm polling skipped (no LASTFM_TARGET_JID, WHATSAPP_TARGET_JID or bot self chat)");
     return;

@@ -39,8 +39,9 @@ const env = {
   SPOTIFY_REDIRECT_URI:
     process.env.SPOTIFY_REDIRECT_URI ||
     "http://127.0.0.1:3000/spotify/callback",
-  LASTFM_API_KEY: process.env.LASTFM_API_KEY,
-  LASTFM_USERNAME: process.env.LASTFM_USERNAME,
+  LASTFM_API_KEY: process.env.LASTFM_API_KEY || process.env.LAST_FM_API_KEY,
+  LASTFM_USERNAME:
+    process.env.LASTFM_USERNAME || process.env.LASTFM_USER_NAME,
   LASTFM_POLL_INTERVAL: Number(process.env.LASTFM_POLL_INTERVAL || 15000),
   LASTFM_TARGET_JID: process.env.LASTFM_TARGET_JID || "",
   LASTFM_SCROBBLING_URL:
