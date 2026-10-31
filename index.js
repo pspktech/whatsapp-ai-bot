@@ -102,8 +102,10 @@ async function startSession(sessionName) {
             }
           }
           startDailyAutomation(sessionSock);
-          startLastfmPolling(sessionSock);
         }
+
+        // Last.fm can use any connected session when the primary session is logged out.
+        startLastfmPolling(sessionSock);
       }
 
       if (connection === "close") {
@@ -122,6 +124,9 @@ async function startSession(sessionName) {
           try {
             stopDailyAutomation();
           } catch (e) {}
+        }
+
+        if (!state.isConnected) {
           try {
             stopLastfmPolling();
           } catch (e) {}
