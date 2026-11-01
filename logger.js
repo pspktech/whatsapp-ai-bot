@@ -34,70 +34,43 @@ const NOISE_PATTERNS = [
   "chainKey:",
   "chainType:",
   "messageKeys:",
-  "baseKeyType:",
+  "baseKeyType:"
 ];
 
-function isNoise(args) {
-  try {
-    const full = args
-      .map((a) => {
-        if (a == null) return "";
-        if (typeof a === "string") return a;
-        if (a instanceof Error) return a.message || "";
-        if (Buffer.isBuffer(a)) return "";
-        if (typeof a === "object") {
-          const ctor = a.constructor?.name || "";
-          if (
-            ctor.includes("Session") ||
-            ctor.includes("Entry") ||
-            ctor.includes("Cipher") ||
-            ctor.includes("Ratchet")
-          ) {
-            return "SessionEntry";
-          }
-          if (
-            a._chains ||
-            a.registrationId ||
-            a.currentRatchet ||
-            a.indexInfo ||
-            a.pendingPreKey
-          ) {
-            return "SessionEntry";
-          }
-        }
-        try {
-          return util.inspect(a, { depth: 0, breakLength: Infinity });
-        } catch {
-          return "";
-        }
-      })
-      .join(" ")
-      .toLowerCase();
-
-    return NOISE_PATTERNS.some((p) => full.includes(p.toLowerCase()));
-  } catch {
-    return false;
+function isNoise(msg) {
+  if (typeof msg !== "string") {
+    try {
+      msg = util.inspect(msg, { depth: 0 });
+    } catch {
+      return false;
+    }
   }
+  const lowerMsg = msg.toLowerCase();
+  return NOISE_PATTERNS.some((p) => lowerMsg.includes(p.toLowerCase()));
 }
 
-function installLoggerFilter() {
-  const origError = console.error.bind(console);
-  console.error = (...args) => {
-    if (isNoise(args)) return;
-    origError(...args);
-  };
+// 1. Console Filter
+const originalConsoleError = console.error.bind(console);
+console.error = (...args) => {
+  if (isNoise(args.map(String).join(" "))) return;
+  originalConsoleError(...args);
+};
 
-  const origWarn = console.warn.bind(console);
-  console.warn = (...args) => {
-    if (isNoise(args)) return;
-    origWarn(...args);
-  };
+const originalConsoleLog = console.log.bind(console);
+console.log = (...args) => {
+  if (isNoise(args.map(String).join(" "))) return;
+  originalConsoleLog(...args);
+};
 
-  const origLog = console.log.bind(console);
-  console.log = (...args) => {
-    if (isNoise(args)) return;
-    origLog(...args);
-  };
-}
+// 2. Raw Terminal Output Filter (Baileys bypass aapadaniki)
+const originalStdoutWrite = process.stdout.write.bind(process.stdout);
+process.stdout.write = (chunk, encoding, callback) => {
+  if (isNoise(chunk.toString())) return true;
+  return originalStdoutWrite(chunk, encoding, callback);
+};
 
-module.exports = { isNoise, installLoggerFilter };
+const originalStderrWrite = process.stderr.write.bind(process.stderr);
+process.stderr.write = (chunk, encoding, callback) => {
+  if (isNoise(chunk.toString())) return true;
+  return originalStderrWrite(chunk, encoding, callback);
+};

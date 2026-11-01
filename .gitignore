@@ -10,3 +10,6 @@ whatsapp-ai-v3@*
 *.log
 cookies.txt
 FETCH_HEAD
+.env
+cookies.txt
+data/
