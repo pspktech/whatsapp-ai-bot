@@ -3,7 +3,7 @@ const state = require("../state");
 const { incrementStat } = require("../db");
 
 let pollTimer = null;
-let lastTrackId = null; // 👈 Idi chala important (Repeated messages aapadaniki)
+let lastTrackId = null; 
 
 const JUNK_KEYWORDS = [
   "advertisement", "sponsored", "promo", "u.s. polo", 
@@ -29,29 +29,43 @@ async function getCurrentlyPlayingLastfm() {
   const name = (track.name || "").trim();
   const artist = (track.artist?.["#text"] || "").trim();
   const album = (track.album?.["#text"] || "").trim();
+  
+  // 👇 Album Art Image URL Theesukovadam
+  let imageUrl = "";
+  if (track.image && Array.isArray(track.image)) {
+    // Extralarge leda Large image ni vethukuthunnam
+    const img = track.image.find(i => i.size === "extralarge") || track.image.find(i => i.size === "large");
+    if (img) imageUrl = img["#text"];
+  }
+  
+  // Oka vela default Last.fm star image unte, dhaanni theesestham
+  if (imageUrl && imageUrl.includes("2a96cbd8b46e442fc41c2b86b821562f")) {
+    imageUrl = "";
+  }
 
   const combined = `${name} ${artist} ${album}`.toLowerCase();
   if (JUNK_KEYWORDS.some((k) => combined.includes(k))) return null;
   if (name.length < 2) return null;
 
   return {
-    id: `${name}-${artist}`, // Unique ID
+    id: `${name}-${artist}`,
     name,
     artists: artist,
     album,
+    imageUrl, // 👈 Image URL ni return chesthunnam
     isPlaying: true,
   };
 }
 
 function formatTrackMessage(track) {
-  let msg = `🎧 Ippudu vintunna:\n\n`;
+  let msg = `🎧 Song playing from spotify:\n\n`;
   msg += `🎵 *${track.name}*\n`;
   msg += `🎤 ${track.artists}\n`;
   if (track.album) msg += `💿 ${track.album}`;
   return msg;
 }
 
-async function startMusicPolling() {
+async function startLastfmPolling() { // Nee index.js lo peru ide unte idi pani chestundi
   if (!env.WHATSAPP_TARGET_JID) {
     console.log("ℹ️  Music polling skipped (no WHATSAPP_TARGET_JID)");
     return;
@@ -73,29 +87,35 @@ async function startMusicPolling() {
       const track = await getCurrentlyPlayingLastfm();
       if (!track || !track.isPlaying) return;
 
-      // 🚨 IKKADA REPEATED MESSAGES AAGUTAYI 🚨
       if (track.id === lastTrackId) return; 
-      
       lastTrackId = track.id;
 
-      // Debug log theesesa, ippudu clean ga untundi
-      await state.sock.sendMessage(env.WHATSAPP_TARGET_JID, {
-        text: formatTrackMessage(track),
-      });
+      // 👇 IKKADA IMAGE THO PAATU PAMPISTHUNNAM
+      if (track.imageUrl) {
+        await state.sock.sendMessage(env.WHATSAPP_TARGET_JID, {
+          image: { url: track.imageUrl },
+          caption: formatTrackMessage(track),
+        });
+      } else {
+        // Image lekapothe text matrame pampistundi
+        await state.sock.sendMessage(env.WHATSAPP_TARGET_JID, {
+          text: formatTrackMessage(track),
+        });
+      }
 
       incrementStat("spotify_updates");
-      console.log("🎵 Last.fm now-playing sent →", track.name);
+      console.log("🎵 Last.fm now-playing (with art) sent →", track.name);
     } catch (err) {
       console.error("Music poll error:", err.message);
     }
   }, 15000);
 }
 
-function stopMusicPolling() {
+function stopLastfmPolling() {
   clearInterval(pollTimer);
 }
 
 module.exports = { 
-  startLastfmPolling: startMusicPolling, 
-  stopLastfmPolling: stopMusicPolling 
+  startLastfmPolling, 
+  stopLastfmPolling 
 };
