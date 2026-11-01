@@ -1,96 +1,77 @@
-whatsapp-ai-bot anedi oka personal WhatsApp bot, idi AI chat, Spotify updates, weather reports, mariyu media downloader features tho untundi. Baileys + Express tho build chesaru.
+whatsapp-ai-bot anedi personal WhatsApp bot. AI chat, Last.fm updates, weather, media downloader, admin dashboard features tho build chesaru.
 
 ✨ Features
 
-· AI Chat: Groq (LLaMA / GPT-OSS) vadadam valla Telugu/English lo human-like replies istundi.
-· Spotify Now Playing: Prati 10 seconds ki Spotify ni poll chesi, "Ippudu vintunna" updates pampistundi.
-· Weather: /weather command tho daily 7 AM ki auto report (Open-Meteo, API key avasaram ledu).
-· Media Downloader: YouTube / Instagram / X / Twitter nunchi video + audio ni yt-dlp tho download cheyochu.
-· Spotify Downloader: Spotify link paste cheste, YouTube nunchi MP3 download chestundi.
-· Admin Dashboard: Live stats (messages, AI replies, media sent, uptime) chupistundi.
-· Session Persistence: WhatsApp login data/auth lo save avutundi, restart ki QR scan avasaram ledu.
-· Noise Filter: Baileys/libsignal verbose logs ni suppress chestundi.
+· AI Chat: Groq vadadam valla Telugu/English lo human-like replies istundi.
+· Last.fm Updates: Prati 15 seconds ki Last.fm recent/now-playing track poll chesi WhatsApp update pampistundi.
+· `.lfm`: Last.fm lo latest 10 tracks chupistundi.
+· Weather: /weather command tho weather report.
+· Media Downloader: YouTube / Instagram / X / Twitter nunchi video + audio download.
+· Admin Dashboard: Live stats, messages, AI replies, media sent and Last.fm updates.
+· Session Persistence: WhatsApp auth data save avutundi, restart ki QR scan avasaram ledu.
+· Noise Filter: Baileys/libsignal verbose logs suppress chestundi.
 
 🛠️ Prerequisites (Termux lo)
 
-Ee bot run cheyadaniki ee tools kavali:
+· Node.js version 20 or higher
+· yt-dlp
+· ffmpeg
+· Last.fm API key and Last.fm username
 
-· Node.js (version 20 leda adi kante ekkuva; better-sqlite3 kosam required)
-· yt-dlp (media downloader)
-· ffmpeg (audio conversion)
-· Spotify Premium (optional, "now playing" feature kosam)
+🚀 Quick Start
 
-🚀 Quick Start (Termux Setup)
-
-1. Repository Clone Cheyandi:
-   ```bash
+1. Repository clone:
    git clone https://github.com/pspktech/whatsapp-ai-bot.git
    cd whatsapp-ai-bot
-   ```
-2. Dependencies Install Cheyandi:
-   ```bash
+
+2. Dependencies install:
    npm install
-   ```
-3. System Tools Install Cheyandi (Termux):
-   ```bash
-   pkg install yt-dlp ffmpeg
-   ```
-4. Environment Variables Setup:
-   ```bash
+
+3. Environment setup:
    cp .env.example .env
-   ```
-   Taruvata .env file ni open chesi, mee keys (Groq API, Spotify, WhatsApp number, etc.) add cheyandi.
-5. Bot Run Cheyandi:
-   ```bash
+
+   `.env` lo Groq, Last.fm and WhatsApp target settings add cheyyandi.
+
+4. Bot run:
    npm start
-   ```
-   Modati sari run chesinappudu terminal lo QR code vastundi. Phone lo WhatsApp → Linked Devices → Link a Device ki velli scan cheyandi.
 
-🔑 Environment Variables (.env lo)
+5. First run lo QR code ni WhatsApp → Linked Devices → Link a Device tho scan cheyyandi.
 
-Ee variables ni set cheyali:
+🔑 Important .env variables
 
 · PORT=3000
 · ADMIN_PASSWORD=change-this-password
 · GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxx
-· AI_MODEL=openai/gpt-oss-120b
-· MAX_HISTORY=10
-· PARTNER_NAME=
-· PARTNER_ALT=
-· SPOTIFY_CLIENT_ID=xxxxxxxxxxxx
-· SPOTIFY_CLIENT_SECRET=xxxxxxxxxxxx
-· SPOTIFY_REFRESH_TOKEN=xxxxxxxxxxxx
-· SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/spotify/callback
-· SPOTIFY_POLL_INTERVAL=10000
+· LASTFM_API_KEY=xxxxxxxxxxxxxxxx
+· LASTFM_USERNAME=your-lastfm-username
+· LASTFM_POLL_INTERVAL=15000
+· LASTFM_TARGET_JID=91XXXXXXXXXX@s.whatsapp.net
 · WHATSAPP_TARGET_JID=91XXXXXXXXXX@s.whatsapp.net
 · WEATHER_CITY=Hyderabad
 
-Keys Ela Techukovali:
+Last.fm scrobbling setup:
+https://www.last.fm/about/trackmymusic
 
-· Groq API Key: https://console.groq.com/keys nunchi teesukovachu.
-· Spotify: Spotify Developer Dashboard lo app create chesi, Client ID, Secret, mariyu Refresh Token teesukovali.
+Last.fm API key:
+https://www.last.fm/api/account/create
 
 📂 Project Structure
 
 ```
-whatsapp-ai-v3/
-├── index.js          # Entry point — WhatsApp setup + boot
+whatsapp-ai-bot/
+├── index.js          # WhatsApp setup + boot
 ├── config.js         # Env vars loader
-├── logger.js         # Suppress noisy Baileys logs
-├── state.js          # Shared mutable state
-├── db.js             # SQLite (better-sqlite3)
+├── logger.js         # Suppress noisy logs
+├── state.js           # Shared state
+├── db.js              # SQLite database
 ├── features/
-│   ├── ai.js         # Groq AI + system prompt
-│   ├── weather.js    # Open-Meteo weather
-│   ├── spotify.js    # Spotify auth + polling
-│   ├── media.js      # URL detect + yt-dlp download
-│   ├── router.js     # Message router
-│   └── admin.js      # Express routes + dashboard
-├── data/             # SQLite DB + WhatsApp auth (gitignored)
-├── .env              # Secrets (gitignored)
+│   ├── ai.js          # Groq AI + system prompt
+│   ├── weather.js     # Open-Meteo weather
+│   ├── lastfm.js      # Last.fm polling + .lfm command
+│   ├── media.js       # URL detect + yt-dlp download
+│   ├── router.js      # Message router
+│   └── admin.js       # Express routes + dashboard
+├── data/              # SQLite DB + WhatsApp auth (gitignored)
+├── .env               # Secrets (gitignored)
 └── package.json
 ```
-
-
-
-Ee bot ni Termux lo setup cheyadam chala simple. Edaina step lo doubt unte adagandi!

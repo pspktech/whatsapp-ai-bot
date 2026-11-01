@@ -2,7 +2,6 @@
 const env = require("../config");
 const state = require("../state");
 const { incrementStat } = require("../db");
-const { getCurrentlyPlayingSpotify } = require("./spotify");
 
 const LASTFM_API_URL = "https://ws.audioscrobbler.com/2.0/";
 let lastfmPollTimer = null;
@@ -109,7 +108,7 @@ function formatRecentTracks(tracks) {
     if (track.url) lines.push(`   🔗 ${track.url}`);
     lines.push("");
   });
-  lines.push(`🔗 Spotify scrobbling: ${env.LASTFM_SCROBBLING_URL}`);
+  lines.push(`🔗 Scrobbling setup: ${env.LASTFM_SCROBBLING_URL}`);
   lines.push(`📱 Last.fm app: ${env.LASTFM_APP_URL}`);
   return lines.join("\n");
 }
@@ -201,33 +200,16 @@ async function handleLastfmCommand(sock, jid, text) {
       text: [
         "❌ Last.fm not configured.",
         "Set LASTFM_API_KEY and LASTFM_USERNAME in .env, then restart the bot.",
-        `🔗 Spotify scrobbling setup: ${env.LASTFM_SCROBBLING_URL}`,
+        `🔗 Scrobbling setup: ${env.LASTFM_SCROBBLING_URL}`,
       ].join("\n"),
     });
     return true;
   }
 
   try {
-    let spotifyCurrent = null;
-    try {
-      spotifyCurrent = await getCurrentlyPlayingSpotify();
-    } catch (error) {
-      console.error("Spotify current track error while serving .lfm:", error.message);
-    }
     const tracks = await getRecentTracks(10);
     console.log(`📡 Last.fm returned ${tracks.length} recent track(s)`);
-    let reply = formatRecentTracks(tracks);
-    if (spotifyCurrent?.isPlaying) {
-      reply = [
-        `▶️ *Spotify currently playing: ${spotifyCurrent.name}*`,
-        `🎤 ${spotifyCurrent.artists}`,
-        spotifyCurrent.album ? `💿 ${spotifyCurrent.album}` : "",
-        spotifyCurrent.url ? `🔗 ${spotifyCurrent.url}` : "",
-        "",
-        reply,
-      ].filter(Boolean).join("\n");
-    }
-    await sock.sendMessage(jid, { text: reply });
+    await sock.sendMessage(jid, { text: formatRecentTracks(tracks) });
   } catch (error) {
     console.error("Last.fm recent tracks error:", error.message);
     await sock.sendMessage(jid, { text: `❌ Last.fm error: ${error.message}` });

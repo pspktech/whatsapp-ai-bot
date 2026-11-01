@@ -17,7 +17,6 @@ const env = require("./config");
 const state = require("./state");
 const { DATA_DIR } = require("./db");
 const { processMessage, enqueue } = require("./features/router");
-const { startMusicPolling, stopMusicPolling } = require("./features/spotify");
 const { startWeatherSchedule } = require("./features/weather");
 const { startDailyAutomation, stopDailyAutomation } = require("./features/daily");
 const { startLastfmPolling, stopLastfmPolling } = require("./features/lastfm");
@@ -98,12 +97,6 @@ async function startSession(sessionName) {
           startDailyAutomation(sessionSock);
         }
 
-        // Music and Last.fm can use any connected session when primary is logged out.
-        try {
-          startMusicPolling(sessionSock);
-        } catch (e) {
-          console.error("Music polling error:", e.message);
-        }
         // Last.fm can use any connected session when the primary session is logged out.
         startLastfmPolling(sessionSock);
       }
@@ -124,9 +117,6 @@ async function startSession(sessionName) {
         }
 
         if (!state.isConnected) {
-          try {
-            stopMusicPolling();
-          } catch (e) {}
           try {
             stopLastfmPolling();
           } catch (e) {}

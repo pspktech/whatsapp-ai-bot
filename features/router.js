@@ -299,7 +299,6 @@ async function processMessage(msg, sessionSock, sessionName) {
         } catch {}
         state.totalSent++;
         incrementStat("messages_sent");
-        incrementStat("spotify_updates");
         return;
       }
     }

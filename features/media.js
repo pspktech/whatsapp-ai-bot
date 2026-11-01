@@ -27,7 +27,7 @@ if (fs.existsSync(COOKIES_PATH)) {
 function getSupportedUrl(text) {
   if (!text) return null;
   const match = text.match(
-    /https?:\/\/(?:www\.)?(youtube\.com|youtu\.be|instagram\.com|x\.com|twitter\.com|open\.spotify\.com)\/[^\s]+/i
+    /https?:\/\/(?:www\.)?(youtube\.com|youtu\.be|instagram\.com|x\.com|twitter\.com)\/[^\s]+/i
   );
   if (!match) return null;
 
@@ -38,9 +38,6 @@ function getSupportedUrl(text) {
     /instagram\.com\/(reel|p|tv)\//i.test(url) ||
     /(?:x\.com|twitter\.com)\/[^/]+\/status\//i.test(url)
   ) return { url, type: "video" };
-
-  if (/open\.spotify\.com\/(track|album|playlist)\//i.test(url))
-    return { url, type: "audio" };
 
   return null;
 }
@@ -86,35 +83,18 @@ async function downloadMedia(url) {
   }
 }
 
-async function getSpotifyTrackName(spotifyUrl) {
-  const res = await fetch(
-    "https://open.spotify.com/oembed?url=" + encodeURIComponent(spotifyUrl)
-  );
-  if (!res.ok) throw new Error("Spotify oEmbed failed");
-  const data = await res.json();
-  if (!data.title) throw new Error("Spotify title not found");
-  return data.title;
-}
-
 async function downloadAudio(url) {
   const tempDir = path.join(os.tmpdir(), "wa-audio-" + crypto.randomUUID());
   fs.mkdirSync(tempDir, { recursive: true });
   const outputTemplate = path.join(tempDir, "audio.%(ext)s");
 
   try {
-    let target = url;
-    if (/open\.spotify\.com/i.test(url)) {
-      const trackName = await getSpotifyTrackName(url);
-      target = `ytsearch1:${trackName} audio`;
-      console.log("🎵 Spotify search:", trackName);
-    }
-
     await execFileAsync("yt-dlp", [
       ...COMMON_ARGS,
       "-f", "bestaudio/best", "-x",
       "--audio-format", "mp3", "--audio-quality", "128K",
       "--max-filesize", "32M",
-      "-o", outputTemplate, target,
+      "-o", outputTemplate, url,
     ], { timeout: 180000, maxBuffer: 1024 * 1024 * 4 });
 
     const files = fs.readdirSync(tempDir).filter((f) => f !== "." && f !== "..");

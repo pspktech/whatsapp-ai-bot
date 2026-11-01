@@ -1,16 +1,12 @@
 // features/admin.js
 const express = require("express");
 const crypto = require("crypto");
-const path = require("path");
-const fs = require("fs");
 const env = require("../config");
 const state = require("../state");
 const { db, getStat } = require("../db");
 const { createProjectsPage } = require("./projects");
 
 const adminTokens = new Set();
-const SPOTIFY_SCOPES = "user-read-currently-playing user-read-playback-state";
-
 function adminAuth(req, res, next) {
   const token = req.headers.authorization?.replace("Bearer ", "");
   if (!token || !adminTokens.has(token)) {
@@ -22,70 +18,6 @@ function adminAuth(req, res, next) {
 function createApp() {
   const app = express();
   app.use(express.json());
-
-  app.get("/spotify/login", (req, res) => {
-    const params = new URLSearchParams({
-      client_id: env.SPOTIFY_CLIENT_ID,
-      response_type: "code",
-      redirect_uri: env.SPOTIFY_REDIRECT_URI,
-      scope: SPOTIFY_SCOPES,
-    });
-    res.redirect("https://accounts.spotify.com/authorize?" + params.toString());
-  });
-
-  app.get("/spotify/callback", async (req, res) => {
-    const code = req.query.code;
-    if (!code) return res.send("❌ No code from Spotify");
-
-    try {
-      const basic = Buffer.from(
-        `${env.SPOTIFY_CLIENT_ID}:${env.SPOTIFY_CLIENT_SECRET}`
-      ).toString("base64");
-
-      const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${basic}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          code,
-          redirect_uri: env.SPOTIFY_REDIRECT_URI,
-        }),
-      });
-
-      const data = await tokenRes.json();
-      if (!data.refresh_token) {
-        console.error("Spotify callback error:", data);
-        return res.send("❌ No refresh token. Check redirect URI.");
-      }
-
-      const envPath = path.join(__dirname, "..", ".env");
-      let envText = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf8") : "";
-
-      if (/SPOTIFY_REFRESH_TOKEN=.*/m.test(envText)) {
-        envText = envText.replace(
-          /SPOTIFY_REFRESH_TOKEN=.*/m,
-          `SPOTIFY_REFRESH_TOKEN=${data.refresh_token}`
-        );
-      } else {
-        envText += `\nSPOTIFY_REFRESH_TOKEN=${data.refresh_token}\n`;
-      }
-
-      fs.writeFileSync(envPath, envText);
-      env.SPOTIFY_REFRESH_TOKEN = data.refresh_token;
-
-      res.send(`
-        <h2>✅ Spotify connected!</h2>
-        <p>Refresh token .env lo save ayyindi.</p>
-        <p><b>Restart cheyyi:</b> <code>node index.js</code></p>
-      `);
-    } catch (err) {
-      console.error("Callback error:", err);
-      res.send("❌ Error: " + err.message);
-    }
-  });
 
   app.get("/", (req, res) => {
     res.send(`
@@ -152,7 +84,7 @@ async function login(){
       aiReplies: getStat("ai_replies"),
       mediaSent: getStat("media_sent"),
       audioSent: getStat("audio_sent"),
-      spotifyUpdates: getStat("spotify_updates"),
+      lastfmUpdates: getStat("lastfm_updates"),
       errors: getStat("errors"),
       totalDatabaseMessages: messages.count,
       activeChats: uniqueChats.count,
@@ -188,7 +120,7 @@ button{margin-top:20px;padding:12px 20px;border:0;border-radius:10px;cursor:poin
 <div class="card">Active Chats<div class="number" id="activeChats">0</div></div>
 <div class="card">Media Sent<div class="number" id="mediaSent">0</div></div>
 <div class="card">Audio Sent<div class="number" id="audioSent">0</div></div>
-<div class="card">Music Updates<div class="number" id="spotifyUpdates">0</div></div>
+<div class="card">Last.fm Updates<div class="number" id="lastfmUpdates">0</div></div>
 <div class="card">Errors<div class="number" id="errors">0</div></div>
 <div class="card">DB Messages<div class="number" id="database">0</div></div>
 </div>
@@ -210,7 +142,7 @@ async function loadStats(){
   document.getElementById("aiReplies").innerText=d.aiReplies;
   document.getElementById("mediaSent").innerText=d.mediaSent;
   document.getElementById("audioSent").innerText=d.audioSent;
-  document.getElementById("spotifyUpdates").innerText=d.spotifyUpdates;
+  document.getElementById("lastfmUpdates").innerText=d.lastfmUpdates;
   document.getElementById("errors").innerText=d.errors;
   document.getElementById("database").innerText=d.totalDatabaseMessages;
   document.getElementById("activeChats").innerText=d.activeChats;

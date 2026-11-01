@@ -31,14 +31,6 @@ const env = {
   DAILY_MINUTE: Number(process.env.DAILY_MINUTE || 0),
   DAILY_MESSAGE: process.env.DAILY_MESSAGE || "",
 
-  SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
-  SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,
-  SPOTIFY_REFRESH_TOKEN: process.env.SPOTIFY_REFRESH_TOKEN,
-  SPOTIFY_POLL_INTERVAL: Number(process.env.SPOTIFY_POLL_INTERVAL || 10000),
-  SPOTIFY_USER_NAME: process.env.SPOTIFY_USER_NAME || "Madhu",
-  SPOTIFY_REDIRECT_URI:
-    process.env.SPOTIFY_REDIRECT_URI ||
-    "http://127.0.0.1:3000/spotify/callback",
   LASTFM_API_KEY: process.env.LASTFM_API_KEY || process.env.LAST_FM_API_KEY,
   LASTFM_USERNAME:
     process.env.LASTFM_USERNAME || process.env.LASTFM_USER_NAME,

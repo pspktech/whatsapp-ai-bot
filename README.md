@@ -1,6 +1,6 @@
 # 🤖 WhatsApp AI Bot
 
-A personal WhatsApp bot with AI replies, YouTube/Instagram downloads, Spotify auto-updates, AFK mode, weather, translation, and more. Built with Baileys + Groq AI.
+A personal WhatsApp bot with AI replies, YouTube/Instagram downloads, Last.fm updates, AFK mode, weather, translation, and more. Built with Baileys + Groq AI.
 
 ---
 
@@ -23,13 +23,12 @@ A personal WhatsApp bot with AI replies, YouTube/Instagram downloads, Spotify au
 - **YouTube** — `.yta <song>` (MP3) / `.ytv <song> [quality]` (video)
 - **Instagram** — send any reel/post link (auto-download)
 - **Twitter/X** — send any tweet link
-- **Spotify** — send track/album/playlist link → MP3
 - Powered by **yt-dlp** + **deno** + cookies
 
-### 🎵 Spotify Auto-Update
-- Detects currently playing track
-- Sends message to target JID every 10s when track changes
-- Format: `🎧 Ippudu vintunna: 🎵 <song>`
+### 🎧 Last.fm Updates
+- Polls Last.fm every 15 seconds
+- Sends a WhatsApp update for a new `nowplaying` or recently scrobbled track
+- `.lfm` returns the latest 10 Last.fm tracks
 
 ### 🌤️ Weather
 - `/weather <city>` — current + 3-day forecast
@@ -73,7 +72,7 @@ A personal WhatsApp bot with AI replies, YouTube/Instagram downloads, Spotify au
 
 ### 🎧 Last.fm
 - Set `LASTFM_API_KEY` and `LASTFM_USERNAME` in `.env`.
-- Connect Spotify to Last.fm from `https://www.last.fm/about/trackmymusic` so Spotify plays are scrobbled.
+- Connect your music app to Last.fm from `https://www.last.fm/about/trackmymusic` so plays are scrobbled.
 - The bot polls Last.fm every 15 seconds and sends a WhatsApp message when a new `nowplaying` track appears.
 - Use `.lfm` to receive the 10 most recent tracks.
 - `LASTFM_TARGET_JID` controls the notification destination; it falls back to `WHATSAPP_TARGET_JID` and then the bot's own chat.
@@ -119,7 +118,7 @@ Send any link from Instagram / YouTube / Twitter → auto-download.
 - **Node.js 20+**
 - **yt-dlp** + **deno** + **ffmpeg**
 - **Groq API key** — [console.groq.com](https://console.groq.com)
-- **Spotify API credentials** (optional, for auto-update)
+- **Last.fm API key and username** (for track updates)
 - **cookies.txt** for Instagram/YouTube (optional)
 
 ### Install
