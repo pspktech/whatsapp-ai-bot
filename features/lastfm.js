@@ -3,10 +3,10 @@ const state = require("../state");
 const { incrementStat } = require("../db");
 
 let pollTimer = null;
-let lastTrackId = null; 
+let lastTrackId = null;
 
 const JUNK_KEYWORDS = [
-  "advertisement", "sponsored", "promo", "u.s. polo", 
+  "advertisement", "sponsored", "promo", "u.s. polo",
   "us polo", "ad ", " ad", "spotify", "patreon",
   "youtube", "instagram", "reels" // Instagram/YouTube junk theeseyadaniki
 ];
@@ -29,7 +29,7 @@ async function getCurrentlyPlayingLastfm() {
 
   const name = (track.name || "").trim();
   const artist = (track.artist?.["#text"] || "").trim();
-  
+
   // Album Object Bug Fix
   let album = "";
   if (track.album) {
@@ -45,7 +45,7 @@ async function getCurrentlyPlayingLastfm() {
     const img = track.image.find(i => i.size === "extralarge") || track.image.find(i => i.size === "large");
     if (img) imageUrl = img["#text"];
   }
-  
+
   if (imageUrl && imageUrl.includes("2a96cbd8b46e442fc41c2b86b821562f")) {
     imageUrl = "";
   }
@@ -64,21 +64,16 @@ async function getCurrentlyPlayingLastfm() {
   };
 }
 
-// 👇 IKKADA MARCHANU 👇
 function formatTrackMessage(track) {
-  // URL lu anni theesesaam, text ni "Song request by madhu" ki marchaam
   let msg = `🎧 Song requested by madhu\n\n`;
   msg += `🎵 *${track.name}*\n`;
   msg += `🎤 ${track.artists}\n`;
-  
-  // Album unte matrame chupinchu
+
   if (track.album && track.album !== "[object Object]") {
     msg += `💿 ${track.album}`;
   }
-  
   return msg;
 }
-// 👆 MARCHANAM AIPOYINDI 👆
 
 async function startLastfmPolling() {
   if (!env.WHATSAPP_TARGET_JID) {
@@ -100,9 +95,13 @@ async function startLastfmPolling() {
 
       const track = await getCurrentlyPlayingLastfm();
       if (!track || !track.isPlaying) return;
-      if (track.id === lastTrackId) return; 
-      
+      if (track.id === lastTrackId) return;
+
       lastTrackId = track.id;
+
+      // 👇 LYRICS FEATURE KOSAM IDI CHALA IMPORTANT 👇
+      // Prati sari kotha paata vachinappudu, daani details ni state lo save chesthunnam
+      state.lastPlayedSong = { artist: track.artists, title: track.name };
 
       if (track.imageUrl) {
         await state.sock.sendMessage(env.WHATSAPP_TARGET_JID, {
@@ -127,7 +126,7 @@ function stopLastfmPolling() {
   clearInterval(pollTimer);
 }
 
-module.exports = { 
-  startLastfmPolling, 
-  stopLastfmPolling 
+module.exports = {
+  startLastfmPolling,
+  stopLastfmPolling
 };
