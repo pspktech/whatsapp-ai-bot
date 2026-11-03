@@ -20,6 +20,7 @@ const { handleSocialCommand } = require("./social");
 const { handleContactCommand } = require("./contact");
 const { handleFeedbackCommand } = require("./feedback");
 const { handleAiStyleCommand } = require("./ai-style");
+const { fetchLyrics } = require("./lyrics");
 // // const { handleLastfmCommand } = require("./lastfm");
 const {
   cacheIncomingMessage,
