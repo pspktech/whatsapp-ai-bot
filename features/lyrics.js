@@ -1,14 +1,14 @@
 // features/lyrics.js
+const { getLyrics } = require("lyrics-lib");
+
 async function fetchLyrics(artist, title) {
   try {
-    // Free Lyrics API (No API Key needed)
-    const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`;
-    const res = await fetch(url);
-    
-    if (!res.ok) return null;
-    
-    const data = await res.json();
-    return data.lyrics || null;
+    // lyrics-lib ki artist and title ivvu
+    const lyrics = await getLyrics({
+      title: title,
+      artist: artist || undefined, // Artist lekapothe undefined pettu
+    });
+    return lyrics || null;
   } catch (err) {
     console.error("Lyrics fetch error:", err.message);
     return null;
