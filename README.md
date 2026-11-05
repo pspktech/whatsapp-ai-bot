@@ -7,7 +7,7 @@ A powerful, multi-session WhatsApp bot built with Baileys, Groq AI, and Last.fm.
 - 💬 **AI Chat Replies:** Natural Tenglish (Telugu + English) replies using Groq (Llama 3).
 - 🎧 **Live Music Tracking:** Auto-posts "Now Playing" songs with Album Art using Last.fm.
 - 🎵 **Lyrics Finder:** Fetches accurate Telugu/Hindi/English lyrics using JioSaavn API.
-- 📥 **Media Downloader:** Downloads YouTube, Instagram, and Spotify links (using `yt-dlp`).
+- 📥 **Media Downloader:** Downloads YouTube, Instagram, and X/Twitter links (using `yt-dlp`).
 - 🌤️ **Daily Weather:** Sends automated weather updates every morning.
 - 👥 **Multi-Session Support:** Run multiple WhatsApp numbers on a single bot instance.
 - 🖥️ **Admin Dashboard:** Web UI to monitor bot status, messages, and errors.
@@ -93,10 +93,11 @@ Scan the QR code in WhatsApp (Linked Devices).
 ---
 
 🎮 Commands
-
 Command Description
+.menu / .help Shows all bot features, commands, and uses
 .lyrics <Song - Artist> Fetches lyrics (e.g., .lyrics Samajavaragamana - Sid Sriram)
 .lyrics Fetches lyrics for the currently playing song
+.lfm Shows the latest 10 Last.fm tracks
 .ai off / .ai on Toggles AI auto-reply
 .afk <reason> Sets Away From Keyboard status
 .weather <city> Gets live weather updates
@@ -128,7 +129,7 @@ whatsapp-ai-bot/
 
 · EALLOWGIT error during install: Run echo "allow-git=all" >> .npmrc before npm install.
 · better-sqlite3 build error: Ensure you installed python, clang, and make via pkg install.
-· Spotify API Blocked: Spotify requires a Premium account for API access. This bot uses Last.fm as a free alternative to track Spotify plays.
+· Last.fm not updating: Check LASTFM_API_KEY, LASTFM_USERNAME, and Track My Music/scrobbling settings.
 · Bot Disconnecting: Ensure your phone's battery optimization is turned OFF for Termux so Android doesn't kill it.
 
 ---

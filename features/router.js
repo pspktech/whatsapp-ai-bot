@@ -99,7 +99,6 @@ async function processMessage(msg, sessionSock, sessionName) {
     if (await handleAiStyleCommand(sock, jid, text)) return;
     if (await handleMenuCommand(sock, jid, text)) return;
     if (await handleLastfmCommand(sock, jid, text)) return;
-// //     if (await handleLastfmCommand(sock, jid, text)) return;
     if (await handleUtilityCommand(sock, jid, text)) return;
 
     // ---- Truth or Dare ----

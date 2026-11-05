@@ -75,6 +75,54 @@ function formatTrackMessage(track) {
   return msg;
 }
 
+async function getRecentTracks(limit = 10) {
+  if (!env.LASTFM_API_KEY || !env.LASTFM_USERNAME) {
+    throw new Error("Last.fm API key or username missing");
+  }
+  const params = new URLSearchParams({
+    method: "user.getrecenttracks",
+    user: env.LASTFM_USERNAME,
+    api_key: env.LASTFM_API_KEY,
+    format: "json",
+    limit: String(Math.min(Math.max(Number(limit) || 10, 1), 10)),
+  });
+  const res = await fetch(`https://ws.audioscrobbler.com/2.0/?${params}`);
+  const data = await res.json();
+  if (!res.ok || data.error) {
+    throw new Error(data.message || `Last.fm API error (${res.status})`);
+  }
+  const tracks = data?.recenttracks?.track || [];
+  return Array.isArray(tracks) ? tracks : [tracks];
+}
+
+function formatRecentTracks(tracks) {
+  const lines = [`🎧 *${env.LASTFM_USERNAME} — Recent Tracks*`, ""];
+  tracks.slice(0, 10).forEach((track, index) => {
+    const artist = track.artist?.["#text"] || track.artist || "Unknown artist";
+    const album = track.album?.["#text"] || track.album || "";
+    const playing = track["@attr"]?.nowplaying === "true";
+    lines.push(`${index + 1}. ${playing ? "▶️" : "🎵"} *${track.name || "Unknown track"}*`);
+    lines.push(`   🎤 ${artist}${album ? ` · 💿 ${album}` : ""}`);
+    if (track.url) lines.push(`   🔗 ${track.url}`);
+    lines.push("");
+  });
+  lines.push(`🔗 Scrobbling setup: ${env.LASTFM_SCROBBLING_URL || "https://www.last.fm/about/trackmymusic"}`);
+  return lines.join("\n");
+}
+
+async function handleLastfmCommand(sock, jid, text) {
+  const command = text.toLowerCase().trim();
+  if (command !== ".lfm" && command !== ".lastfm") return false;
+  try {
+    const tracks = await getRecentTracks(10);
+    await sock.sendMessage(jid, { text: formatRecentTracks(tracks) });
+  } catch (error) {
+    console.error("Last.fm recent tracks error:", error.message);
+    await sock.sendMessage(jid, { text: `❌ Last.fm error: ${error.message}` });
+  }
+  return true;
+}
+
 async function startLastfmPolling() {
   if (!env.WHATSAPP_TARGET_JID) {
     console.log("ℹ️  Music polling skipped (no WHATSAPP_TARGET_JID)");
@@ -127,6 +175,9 @@ function stopLastfmPolling() {
 }
 
 module.exports = {
+  getRecentTracks,
+  handleLastfmCommand,
+  formatRecentTracks,
   startLastfmPolling,
   stopLastfmPolling
 };
