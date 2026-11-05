@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for whatsapp-ai-bot-zqkxlq on 2026-11-05T06:01:12Z
+# fly.toml app configuration file generated for whatsapp-ai-bot-shzv4q on 2026-11-05T06:16:31Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'whatsapp-ai-bot-zqkxlq'
+app = 'whatsapp-ai-bot-shzv4q'
 primary_region = 'ams'
 
 [build]
