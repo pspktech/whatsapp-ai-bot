@@ -21,7 +21,8 @@ const { handleContactCommand } = require("./contact");
 const { handleFeedbackCommand } = require("./feedback");
 const { handleAiStyleCommand } = require("./ai-style");
 const { fetchLyrics } = require("./lyrics");
-// // const { handleLastfmCommand } = require("./lastfm");
+const { handleMenuCommand } = require("./menu");
+const { handleLastfmCommand } = require("./lastfm");
 const {
   cacheIncomingMessage,
   handleDeletedMessage,
@@ -96,6 +97,8 @@ async function processMessage(msg, sessionSock, sessionName) {
     if (await handleContactCommand(sock, jid, text)) return;
     if (await handleFeedbackCommand(sock, jid, text)) return;
     if (await handleAiStyleCommand(sock, jid, text)) return;
+    if (await handleMenuCommand(sock, jid, text)) return;
+    if (await handleLastfmCommand(sock, jid, text)) return;
 // //     if (await handleLastfmCommand(sock, jid, text)) return;
     if (await handleUtilityCommand(sock, jid, text)) return;
 
