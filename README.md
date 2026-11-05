@@ -1,145 +1,142 @@
-# 🤖 WhatsApp AI Bot
+# 🤖 WhatsApp AI Bot (Personal Assistant)
 
-A personal WhatsApp bot with AI replies, YouTube/Instagram downloads, Last.fm updates, AFK mode, weather, translation, and more. Built with Baileys + Groq AI.
-
----
+A powerful, multi-session WhatsApp bot built with Baileys, Groq AI, and Last.fm. It acts as a caring companion, downloads media, fetches Telugu lyrics, and auto-updates your currently playing music!
 
 ## ✨ Features
 
-### 💬 AI Chat
-- **Telugu/Tenglish boyfriend bot** — natural, personal replies
-- Powered by **Groq** (`openai/gpt-oss-120b`)
-- Remembers chat history per contact
-- **ON/OFF toggle** — `.ai on` / `.ai off` / `.ai`
-- Never breaks character, never says "I am an AI"
-
-### 💤 AFK Mode
-- `.afk <reason>` — set away status
-- Auto-replies to incoming messages while away
-- Auto OFF when you send any normal message
-- Shows away duration in reply
-
-### 📥 Media Download
-- **YouTube** — `.yta <song>` (MP3) / `.ytv <song> [quality]` (video)
-- **Instagram** — send any reel/post link (auto-download)
-- **Twitter/X** — send any tweet link
-- Powered by **yt-dlp** + **deno** + cookies
-
-### 🎧 Last.fm Updates
-- Polls Last.fm every 15 seconds
-- Sends a WhatsApp update for a new `nowplaying` or recently scrobbled track
-- `.lfm` returns the latest 10 Last.fm tracks
-
-### 🌤️ Weather
-- `/weather <city>` — current + 3-day forecast
-- Daily schedule (~7 AM IST) to target JID
-
-### 🌐 Translation
-- `.tr <text> to <lang>` — Google Translate
-- Example: `.tr Hello world to te`
-
-### 📝 Notes
-- `.note add <text>` — save note
-- `.note list` — show notes
-- `.note del <num>` — delete note
-
-### ⏰ Reminders
-- `/remind <time> <text>` — set reminder
-
-### 🖼️ Profile Picture
-- `.pp` — reply to image to set, or mention user to get PP
-
-### 🌐 Admin Dashboard
-- Web UI: `http://127.0.0.1:3000/admin`
-- Projects page: `http://127.0.0.1:3000/projects`
-- Stats: uptime, RAM, messages, errors
-- Password protected
-
-### 🎲 Utility and Protection Features
-- `.truth` / `.dare` — Tenglish Truth or Dare prompts
-- `.ping` — bot response check
-- `.owner` / `.info` — owner, uptime, session status and site details
-- `.projects` — send all projects and live/source links in WhatsApp
-- `.app` / `.myapp` — Madhu Portfolio app description and APK download page
-- `.about` — About Madhu Patel and “Overthinker hacker” profile
-- `.resume` — Skills, projects and portfolio links
-- `.social` — Portfolio, GitHub, Telegram and configured social links
-- `.contact` — Owner details or WhatsApp contact card when `OWNER_PHONE` is configured
-- `.feedback <message>` — Forward feedback to `FEEDBACK_TARGET_JID` / `OWNER_JID`
-- `.style funny|professional|romantic|telugu|normal` — Change AI reply style per chat
-- `.lfm` — Last.fm recent 10 tracks with now-playing marker and links
-- Daily 9:00 AM IST message to `DAILY_TARGET_JID` or `WHATSAPP_TARGET_JID`
-
-### 🎧 Last.fm
-- Set `LASTFM_API_KEY` and `LASTFM_USERNAME` in `.env`.
-- Connect your music app to Last.fm from `https://www.last.fm/about/trackmymusic` so plays are scrobbled.
-- The bot polls Last.fm every 15 seconds and sends a WhatsApp message when a new `nowplaying` track appears.
-- Use `.lfm` to receive the 10 most recent tracks.
-- `LASTFM_TARGET_JID` controls the notification destination; it falls back to `WHATSAPP_TARGET_JID` and then the bot's own chat.
-- `.vv` — reply to a view-once image/video to resend it as regular media
-- Anti-delete cache — recovers text/caption messages that the bot received before deletion
-- Keyword auto-replies — edit `features/auto-reply.js` to add fixed replies
+- 💬 **AI Chat Replies:** Natural Tenglish (Telugu + English) replies using Groq (Llama 3).
+- 🎧 **Live Music Tracking:** Auto-posts "Now Playing" songs with Album Art using Last.fm.
+- 🎵 **Lyrics Finder:** Fetches accurate Telugu/Hindi/English lyrics using JioSaavn API.
+- 📥 **Media Downloader:** Downloads YouTube, Instagram, and Spotify links (using `yt-dlp`).
+- 🌤️ **Daily Weather:** Sends automated weather updates every morning.
+- 👥 **Multi-Session Support:** Run multiple WhatsApp numbers on a single bot instance.
+- 🖥️ **Admin Dashboard:** Web UI to monitor bot status, messages, and errors.
+- 🔒 **AFK & Auto-Reply:** Custom commands like `.ai off`, `.afk`, and `.lyrics`.
 
 ---
 
-## 📋 Commands Reference
+## 📋 Prerequisites
 
-| Command | Description |
-|---------|-------------|
-| `.ai on` | Enable AI replies |
-| `.ai off` | Disable AI replies |
-| `.ai` | Show AI status |
-| `.afk <reason>` | Set AFK mode |
-| `.afk off` | Clear AFK mode |
-| `.yta <song>` | Download YouTube audio (MP3) |
-| `.ytv <song> [q]` | Download YouTube video (720p default) |
-| `.ytv <song> 1080` | Download 1080p video |
-| `song <name>` | Send song info |
-| `.tr <text> to <lang>` | Translate text |
-| `.note add/list/del` | Personal notes |
-| `/weather <city>` | Weather forecast |
-| `/remind <time> <text>` | Set reminder |
-| `.pp` | Set/get profile picture |
-| `.truth` / `.dare` | Truth or Dare |
-| `.ping` | Bot latency check |
-| `.owner` / `.info` | Owner and bot information |
-| `.vv` | Save a quoted view-once image/video |
-
-Send any link from Instagram / YouTube / Twitter → auto-download.
-
-> View-once and anti-delete features only work for messages that the bot is able to receive. The bot cannot recover a message that it never received or bypass WhatsApp encryption.
+- **Node.js** v18 or higher
+- **Termux** (Android) or any Linux/Ubuntu server
+- **yt-dlp** & **ffmpeg** (for media downloading)
+- **Groq API Key** (Free) - [Get it here](https://console.groq.com/keys)
+- **Last.fm API Key** (Free) - [Get it here](https://www.last.fm/api/account/create)
 
 ---
 
-## 🚀 Setup
+## 🚀 Installation (Termux)
 
-### Prerequisites
-- **Termux** (Android) — install from [F-Droid](https://f-droid.org/packages/com.termux/)
-- **Node.js 20+**
-- **yt-dlp** + **deno** + **ffmpeg**
-- **Groq API key** — [console.groq.com](https://console.groq.com)
-- **Last.fm API key and username** (for track updates)
-- **cookies.txt** for Instagram/YouTube (optional)
+### 1. Install System Dependencies
+```bash
+pkg update && pkg upgrade -y
+pkg install nodejs git python clang make build-essential ffmpeg -y
+```
 
-### Install
+2. Install yt-dlp
 
 ```bash
-# Update packages
-pkg update && pkg upgrade -y
+curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /data/data/com.termux/files/usr/bin/yt-dlp
+chmod +x /data/data/com.termux/files/usr/bin/yt-dlp
+```
 
-# Install Node + tools
-pkg install nodejs-lts git python make clang ffmpeg deno python-yt-dlp -y
+3. Clone the Repository
 
-# Clone repo
+```bash
 git clone https://github.com/pspktech/whatsapp-ai-bot.git
 cd whatsapp-ai-bot
+```
 
-# Install dependencies
-npm install
+4. Install NPM Packages
 
-# If better-sqlite3 reports a missing native binding
-npm rebuild better-sqlite3 --build-from-source
+```bash
+echo "allow-git=all" >> .npmrc
+npm install --allow-git=all
+npm install lyrics-lib
+```
 
-# Create your environment file
-cp .env.example .env
+5. Setup .env File
+
+Create a .env file and add your credentials:
+
+```bash
+nano .env
+```
+
+Paste this template:
+
+```env
+PORT=3000
+ADMIN_PASSWORD=your_password
+
+# AI Config
+GROQ_API_KEY=your_groq_api_key
+AI_MODEL=openai/gpt-oss-120b
+
+# Music Tracking (Last.fm)
+LASTFM_API_KEY=your_lastfm_api_key
+LASTFM_USERNAME=your_lastfm_username
+
+# WhatsApp Config
+WHATSAPP_SESSIONS=main
+WHATSAPP_TARGET_JID=91XXXXXXXXXX@s.whatsapp.net
+```
+
+6. Run the Bot
+
+```bash
+npm start
+```
+
+Scan the QR code in WhatsApp (Linked Devices).
+
+---
+
+🎮 Commands
+
+Command Description
+.lyrics <Song - Artist> Fetches lyrics (e.g., .lyrics Samajavaragamana - Sid Sriram)
+.lyrics Fetches lyrics for the currently playing song
+.ai off / .ai on Toggles AI auto-reply
+.afk <reason> Sets Away From Keyboard status
+.weather <city> Gets live weather updates
+(Just send a link) Automatically downloads YouTube/Insta media
+
+---
+
+📂 Project Structure
+
+```text
+whatsapp-ai-bot/
+├── index.js              # Main entry point (Multi-session loader)
+├── config.js             # Environment variables setup
+├── state.js              # Shared memory/state
+├── db.js                 # SQLite Database handler
+├── logger.js             # Filters annoying Baileys logs
+└── features/
+    ├── router.js         # Message routing (Core logic)
+    ├── ai.js             # Groq AI integration
+    ├── lastfm.js         # Music tracking logic
+    ├── lyrics.js         # JioSaavn lyrics fetcher
+    ├── weather.js        # Weather API
+    └── media.js          # yt-dlp downloader
+```
+
+---
+
+⚠️ Troubleshooting
+
+· EALLOWGIT error during install: Run echo "allow-git=all" >> .npmrc before npm install.
+· better-sqlite3 build error: Ensure you installed python, clang, and make via pkg install.
+· Spotify API Blocked: Spotify requires a Premium account for API access. This bot uses Last.fm as a free alternative to track Spotify plays.
+· Bot Disconnecting: Ensure your phone's battery optimization is turned OFF for Termux so Android doesn't kill it.
+
+---
+
+📝 License
+
+This project is for personal use. Feel free to fork and modify it!
+
+Made with ❤️ by Madhu
+
 ```
