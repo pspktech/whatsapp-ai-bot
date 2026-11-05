@@ -58,10 +58,22 @@ async function generateAIReply(jid, userText, sessionName = "main") {
     try {
       completion = await ai.chat.completions.create(params);
     } catch (e) {
-      console.error("AI first attempt failed:", e?.message || e);
-      // Oka retry (temperature konchem thakkuva chesi)
-      params.temperature = 0.7;
-      completion = await ai.chat.completions.create(params);
+      const status = e?.status || e?.response?.status || "unknown";
+      console.error("AI request failed:", {
+        status,
+        code: e?.code || "unknown",
+        message: e?.message || String(e),
+        model: params.model,
+      });
+
+      // Retry only transient failures. Retrying a bad key/model request twice
+      // hides the real problem and needlessly consumes rate-limit budget.
+      if (status === 429 || status === "unknown" || status >= 500) {
+        params.temperature = 0.7;
+        completion = await ai.chat.completions.create(params);
+      } else {
+        throw e;
+      }
     }
 
     const reply = completion?.choices?.[0]?.message?.content?.trim();
@@ -81,8 +93,13 @@ async function generateAIReply(jid, userText, sessionName = "main") {
 
     return reply;
   } catch (error) {
-    console.error("generateAIReply error:", error.message);
-    return "Hmm... em ayyindhi ra? 🥺"; // Fallback reply
+    const status = error?.status || error?.response?.status || "unknown";
+    console.error("generateAIReply error:", {
+      status,
+      code: error?.code || "unknown",
+      message: error?.message || String(error),
+    });
+    return "AI reply service connect avvatledu ra. GROQ_API_KEY and AI_MODEL check cheyyi 🥺";
   }
 }
 

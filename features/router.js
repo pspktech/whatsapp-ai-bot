@@ -401,7 +401,11 @@ if (lower.startsWith(".lyrics")) {
     if (!isAiEnabled()) return;
     if (!sock) return;
 
-    await sock.sendPresenceUpdate("composing", jid);
+    try {
+      await sock.sendPresenceUpdate("composing", jid);
+    } catch (presenceError) {
+      console.warn("AI composing presence failed:", presenceError.message);
+    }
 
     let reply;
     try {
