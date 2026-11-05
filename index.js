@@ -161,11 +161,17 @@ async function startSession(sessionName) {
 
     sessionSock.ev.on("messages.upsert", async (event) => {
       const { messages, type } = event;
-      if (type !== "notify") return;
+      console.log(`📨 [${sessionName}] messages.upsert type=${type} count=${messages?.length || 0}`);
+      if (!["notify", "append"].includes(type)) return;
 
       for (const msg of messages) {
         const jid = msg.key?.remoteJid;
         if (!jid) continue;
+
+        const messageTypes = Object.keys(msg.message || {}).join(",") || "no-message";
+        console.log(
+          `📨 [${sessionName}] received ${jid}${msg.key?.fromMe ? " [fromMe]" : ""} type=${messageTypes}`
+        );
 
         enqueue(`${sessionName}:${jid}`, () =>
           processMessage(msg, sessionSock, sessionName)

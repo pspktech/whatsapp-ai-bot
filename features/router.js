@@ -74,6 +74,10 @@ async function processMessage(msg, sessionSock, sessionName) {
     const text = extractMessageText(msg.message).trim();
     const isOwner = msg.key?.fromMe;
 
+    console.log(
+      `📩 [${session}] ${jid}${isOwner ? " [fromMe]" : ""} | ${text || "<non-text message>"}`
+    );
+
     if (!text) return;
 
     // ---- Owner "normal" message → clear AFK ----
@@ -82,7 +86,6 @@ async function processMessage(msg, sessionSock, sessionName) {
       return;
     }
 
-    console.log(`📩 [${session}] ${jid} | ${text}`);
     state.totalReceived++;
     incrementStat("messages_received");
 
