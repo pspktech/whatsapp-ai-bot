@@ -17,8 +17,9 @@ const env = require("./config");
 const state = require("./state");
 const { DATA_DIR } = require("./db");
 const { processMessage, enqueue } = require("./features/router");
-const { startMusicPolling, stopMusicPolling } = require("./features/spotify");
 const { startWeatherSchedule } = require("./features/weather");
+const { startDailyAutomation, stopDailyAutomation } = require("./features/daily");
+const { startLastfmPolling, stopLastfmPolling } = require("./features/lastfm");
 const createApp = require("./features/admin");
 
 // ======================================================
@@ -47,7 +48,7 @@ async function startSession(sessionName) {
       printQRInTerminal: false,
       browser: ["Ubuntu", "Chrome", "20.0.04"],
       syncFullHistory: false,
-      markOnlineOnConnect: false, // Online status hide chestundi
+      markOnlineOnConnect: false, // 👈 Online status hide chestundi
     });
 
     if (!state.sockets) state.sockets = new Map();
@@ -64,53 +65,49 @@ async function startSession(sessionName) {
     // ======================================================
     // PAIRING CODE LOGIC (Cloud kosam)
     // ======================================================
-    // Oka vela .env lo PAIRING_NUMBER unte, QR badhulu Pairing Code isthundi
-    const pairingNumber = process.env.PAIRING_NUMBER;
-    if (!sessionSock.authState.creds.registered && pairingNumber) {
-      setTimeout(async () => {
-        try {
-          let code = await sessionSock.requestPairingCode(pairingNumber);
-          code = code?.match(/.{1,4}/g)?.join("-") || code; // Format: XXXX-XXXX
-          console.log(`\n🔑 [${sessionName}] Pairing Code: \x1b[32m${code}\x1b[0m`);
-          console.log(`📱 WhatsApp -> Linked Devices -> Link with phone number instead -> Enter code.\n`);
-        } catch (err) {
-          console.error(`[${sessionName}] Pairing code error:`, err.message);
-        }
-      }, 3000); // 3 seconds delay (Baileys connection ready avvadaniki)
-    }
+    let pairingCodeRequested = false; // Oka sari ne code adagadaniki
 
     sessionSock.ev.on("connection.update", async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
-      // ======================================================
-      // QR CODE LOGIC (Local kosam - Pairing number lekapothe)
-      // ======================================================
-      if (qr && !pairingNumber) {
-        console.log(`\n📱 [${sessionName}] Scan QR:`);
-        qrcode.generate(qr, { small: true });
+      // QR leda Pairing Code Logic
+      if (qr) {
+        const pairingNumber = env.PAIRING_NUMBER || process.env.PAIRING_NUMBER;
+
+        if (pairingNumber && !pairingCodeRequested) {
+          pairingCodeRequested = true;
+          try {
+            let code = await sessionSock.requestPairingCode(pairingNumber);
+            code = code?.match(/.{1,4}/g)?.join("-") || code; // Format: XXXX-XXXX
+            console.log(`\n🔑 [${sessionName}] Pairing Code: \x1b[32m${code}\x1b[0m`);
+            console.log(`📱 WhatsApp -> Linked Devices -> Link with phone number instead -> Enter code.\n`);
+          } catch (err) {
+            console.error(`[${sessionName}] Pairing code error:`, err.message);
+            pairingCodeRequested = false;
+          }
+        } else if (!pairingNumber) {
+          // Pairing number lekapothe QR print avutundi (Local kosam)
+          console.log(`\n📱 [${sessionName}] Scan QR:`);
+          qrcode.generate(qr, { small: true });
+        }
       }
 
       if (connection === "open") {
         console.log(`✅ [${sessionName}] WhatsApp connected`);
 
-        // Force Offline (Online kanipinchakunda)
+        // 👇 Force Offline (Online kanipinchakunda)
         try {
           await sessionSock.sendPresenceUpdate("unavailable");
         } catch (e) {}
 
+        // 👇 Dashboard Status Fix (Edaina okka session open unte chalu)
         if (!state.sessionStatus) state.sessionStatus = new Map();
         state.sessionStatus.set(sessionName, true);
         state.isConnected = Array.from(state.sessionStatus.values()).some(v => v === true);
 
-        // Music + weather only for primary session
+        // Weather + daily automation only for primary session.
         if (sessionName === state.primarySession) {
           state.isStarting = false;
-
-          try {
-            startMusicPolling();
-          } catch (e) {
-            console.error("Music polling error:", e.message);
-          }
 
           if (env.WHATSAPP_TARGET_JID) {
             try {
@@ -119,12 +116,17 @@ async function startSession(sessionName) {
               console.error("Weather schedule error:", e.message);
             }
           }
+          startDailyAutomation(sessionSock);
         }
+
+        // Last.fm can use any connected session when the primary session is logged out.
+        startLastfmPolling(sessionSock);
       }
 
       if (connection === "close") {
         console.log(`⚠️  [${sessionName}] Disconnected`);
 
+        // 👇 Dashboard Status Fix (Anni close aithe offline avvali)
         if (!state.sessionStatus) state.sessionStatus = new Map();
         state.sessionStatus.set(sessionName, false);
         state.isConnected = Array.from(state.sessionStatus.values()).some(v => v === true);
@@ -132,7 +134,13 @@ async function startSession(sessionName) {
         if (sessionName === state.primarySession) {
           state.isStarting = false;
           try {
-            stopMusicPolling();
+            stopDailyAutomation();
+          } catch (e) {}
+        }
+
+        if (!state.isConnected) {
+          try {
+            stopLastfmPolling();
           } catch (e) {}
         }
 
@@ -191,6 +199,7 @@ async function startBot() {
   for (const sessionName of SESSIONS) {
     console.log(`▶️  Starting session: ${sessionName}`);
     await startSession(sessionName);
+    // Gap between sessions (QR print avvadaniki)
     await new Promise((r) => setTimeout(r, 3000));
   }
 
