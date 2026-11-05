@@ -15,6 +15,12 @@ A powerful, multi-session WhatsApp bot built with Baileys, Groq AI, and Last.fm.
 
 ---
 
+## 🤖 Grok Enquiry Assistant
+- Set `XAI_API_KEY` in `.env` to enable Grok enquiries.
+- `.grok <question>` or `.ask <question>` — ask Grok a question.
+- Grok uses the xAI web-search tool for current news and changing facts.
+- Example: `.grok latest AI news`
+
 ## 📋 Prerequisites
 
 - **Node.js** v18 or higher

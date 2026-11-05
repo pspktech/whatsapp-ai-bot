@@ -5,6 +5,9 @@ const env = {
   PORT: Number(process.env.PORT || 3000),
   GROQ_API_KEY: process.env.GROQ_API_KEY,
   AI_MODEL: process.env.AI_MODEL || "openai/gpt-oss-120b",
+  XAI_API_KEY: process.env.XAI_API_KEY || process.env.GROK_API_KEY,
+  XAI_MODEL: process.env.XAI_MODEL || "grok-4.7",
+  XAI_BASE_URL: process.env.XAI_BASE_URL || "https://api.x.ai/v1",
   MAX_HISTORY: Number(process.env.MAX_HISTORY || 10),
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || "change-this-password",
 

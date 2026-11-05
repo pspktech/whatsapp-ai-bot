@@ -10,6 +10,8 @@ const MENU_TEXT = [
   "• `.ai on/off` — AI replies enable/disable",
   "• `.style funny|professional|romantic|telugu|normal` — AI reply style change",
   "  Use: conversations ni mee preferred style lo maintain cheyyadaniki.",
+  "• `.grok <question>` / `.ask <question>` — Grok enquiry with web search",
+  "  Use: current news, facts, research and general questions kosam.",
   "",
   "📥 *Media Downloads*",
   "• `.yta <song>` — YouTube audio MP3 download",
