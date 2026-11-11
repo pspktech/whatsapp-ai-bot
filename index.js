@@ -37,6 +37,9 @@ const SESSIONS = (env.WHATSAPP_SESSIONS || "main")
 
 async function startSession(sessionName) {
   try {
+    // 👇 Session start ayya time ni save chesthunnam (Purathana messages skip cheyadaniki)
+    const sessionStartTime = Math.floor(Date.now() / 1000);
+
     const authDir = path.join(DATA_DIR, "sessions", sessionName, "auth");
     if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
 
@@ -162,11 +165,20 @@ async function startSession(sessionName) {
     sessionSock.ev.on("messages.upsert", async (event) => {
       const { messages, type } = event;
       console.log(`📨 [${sessionName}] messages.upsert type=${type} count=${messages?.length || 0}`);
-      if (!["notify", "append"].includes(type)) return;
+      
+      // 🚨 1. "notify" matrame allow chey (append/history sync vaddu)
+      if (type !== "notify") return;
 
       for (const msg of messages) {
         const jid = msg.key?.remoteJid;
         if (!jid) continue;
+
+        // 🚨 2. Purathana messages ni skip chey (15 seconds kanna purathanadi aithe)
+        const msgTime = msg.messageTimestamp;
+        if (msgTime && (sessionStartTime - msgTime) > 15) {
+          console.log(`⏭️ Skipping old message from ${jid}`);
+          continue; 
+        }
 
         const messageTypes = Object.keys(msg.message || {}).join(",") || "no-message";
         console.log(
