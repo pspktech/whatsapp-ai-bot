@@ -1,4 +1,5 @@
 // features/router.js
+const { askGemini } = require("./gemini");
 const fs = require("fs");
 const env = require("../config");
 const state = require("../state");
