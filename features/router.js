@@ -353,55 +353,80 @@ async function processMessage(msg, sessionSock, sessionName) {
     // ---- AFK auto-reply (non-owner) ----
     if (!isOwner && (await sendAfkReply(sock, jid, msg))) return;
 
-    // ---- Lyrics Command ----
-if (lower.startsWith(".lyrics")) {
-  const query = text.slice(7).trim();
-  let artist, title;
+    // ---- Gemini Enquiry Command ----
+    if (lower.startsWith(".gemini ")) {
+      const prompt = text.slice(8).trim();
+      
+      if (!prompt) {
+        await sock.sendMessage(jid, { text: "❌ Usage: `.gemini <your question>`\nExample: .gemini explain quantum physics" });
+        return;
+      }
 
-  if (!query) {
-    // User just .lyrics ani adigadu, so currently playing song theesukundam
-    if (state.lastPlayedSong) {
-      artist = state.lastPlayedSong.artist;
-      title = state.lastPlayedSong.title;
-    } else {
-      await sock.sendMessage(jid, { text: "❌ Ee paata peru cheppu ra. Example: `.lyrics Arijit Singh - Kesariya`" });
+      await sock.sendPresenceUpdate("composing", jid);
+      
+      const reply = await askGemini(prompt);
+      
+      // WhatsApp message length limit dhaataka trim chey
+      let formattedReply = reply;
+      if (formattedReply.length > 3000) {
+        formattedReply = formattedReply.slice(0, 3000) + "\n\n... (Answer chala peddaga undi, ikkade aagipoyindi)";
+      }
+
+      await sock.sendMessage(jid, { text: formattedReply });
+      state.totalSent++;
+      incrementStat("messages_sent");
       return;
     }
-  } else {
-    // User "Artist - Title" format lo isthe
-    const parts = query.split("-");
-    if (parts.length >= 2) {
-      artist = parts[0].trim();
-      title = parts.slice(1).join("-").trim();
-    } else {
-      // Oka vela artist cheppakapothe, search query ni title ga theesukuntunnam
-      title = query;
-      artist = ""; 
+
+    // ---- Lyrics Command ----
+    if (lower.startsWith(".lyrics")) {
+      const query = text.slice(7).trim();
+      let artist, title;
+
+      if (!query) {
+        // User just .lyrics ani adigadu, so currently playing song theesukundam
+        if (state.lastPlayedSong) {
+          artist = state.lastPlayedSong.artist;
+          title = state.lastPlayedSong.title;
+        } else {
+          await sock.sendMessage(jid, { text: "❌ Ee paata peru cheppu ra. Example: `.lyrics Arijit Singh - Kesariya`" });
+          return;
+        }
+      } else {
+        // User "Artist - Title" format lo isthe
+        const parts = query.split("-");
+        if (parts.length >= 2) {
+          artist = parts[0].trim();
+          title = parts.slice(1).join("-").trim();
+        } else {
+          // Oka vela artist cheppakapothe, search query ni title ga theesukuntunnam
+          title = query;
+          artist = ""; 
+        }
+      }
+
+      await sock.sendPresenceUpdate("composing", jid);
+      
+      // Lyrics fetch cheddam
+      const lyrics = await fetchLyrics(artist, title);
+
+      if (!lyrics) {
+        await sock.sendMessage(jid, { text: `❌ Sorry ra, *${title}* lyrics dorakaledu.` });
+        return;
+      }
+
+      // WhatsApp message limit 65,000 chars, kaani manam konchem trim cheddam
+      let formattedLyrics = `🎵 *Lyrics: ${title}* 🎵\n\n${lyrics}`;
+      if (formattedLyrics.length > 3000) {
+        formattedLyrics = formattedLyrics.slice(0, 3000) + "\n\n... (Lyrics chala peddaga undi, ikkade aagipoyindi)";
+      }
+
+      await sock.sendMessage(jid, { text: formattedLyrics });
+      state.totalSent++;
+      incrementStat("messages_sent");
+      return;
     }
-  }
-
-  await sock.sendPresenceUpdate("composing", jid);
-  
-  // Lyrics fetch cheddam
-  const lyrics = await fetchLyrics(artist, title);
-
-  if (!lyrics) {
-    await sock.sendMessage(jid, { text: `❌ Sorry ra, *${title}* lyrics dorakaledu.` });
-    return;
-  }
-
-  // WhatsApp message limit 65,000 chars, kaani manam konchem trim cheddam
-  let formattedLyrics = `🎵 *Lyrics: ${title}* 🎵\n\n${lyrics}`;
-  if (formattedLyrics.length > 3000) {
-    formattedLyrics = formattedLyrics.slice(0, 3000) + "\n\n... (Lyrics chala peddaga undi, ikkade aagipoyindi)";
-  }
-
-  await sock.sendMessage(jid, { text: formattedLyrics });
-  state.totalSent++;
-  incrementStat("messages_sent");
-  return;
-}
-    
+        
     // ---- AI reply ----
     if (isOwner) return;
     if (!isAiEnabled()) return;
