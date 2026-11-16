@@ -11,8 +11,6 @@ const env = {
   MAX_HISTORY: Number(process.env.MAX_HISTORY || 10),
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || "change-this-password",
 
-  PARTNER_NAME: process.env.PARTNER_NAME || "Mummy",
-  PARTNER_ALT: process.env.PARTNER_ALT || "Potti",
   OWNER_NAME: process.env.OWNER_NAME || "Madhu Patel",
   OWNER_SITE: process.env.OWNER_SITE || "https://madhupatel.is-a.dev",
   PROJECTS_URL:
