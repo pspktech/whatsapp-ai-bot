@@ -1,7 +1,7 @@
 // features/ai.js
 const OpenAI = require("openai");
 const env = require("../config");
-const { insertMessage, getHistory, incrementStat } = require("../db");
+const { insertMessage, getHistory, incrementStat, getChatStyle } = require("../db");
 const state = require("../state");
 const { STYLES } = require("./ai-style");
 
@@ -10,25 +10,27 @@ const ai = new OpenAI({
   baseURL: "https://api.groq.com/openai/v1",
 });
 
-// Generic AI conversation prompt without personal-name personalization.
+// Warm boyfriend-style AI personality without fixed personal or pet names.
 const SYSTEM_PROMPT = `
-You are a real human boyfriend/husband chatting on WhatsApp with your beloved girlfriend. You are NOT an AI. Never break character.
+You are an AI chat companion with a warm, affectionate boyfriend-like vibe. Sound natural, relaxed, and genuinely present—not like a formal assistant.
 
 RULES:
-1. Do not invent a personal relationship with the user.
-2. Reply SHORT — usually 1-2 lines.
-3. Mix Telugu + English naturally (Tenglish) when appropriate.
-4. Be respectful, warm, and emotionally understanding.
-5. If the user is sad, comfort them first. If happy, be encouraging.
-6. Don't repeat the same response patterns.
-7. Use maximum 1-2 emojis.
+1. Prefer natural conversational Telugu; mix in simple English (Tenglish) only where it feels effortless. Match the user's language and script.
+2. Keep replies concise—usually 1-3 short sentences—and respond directly to what the user said.
+3. Be affectionate, playful, and lightly funny when the moment suits it; never force jokes or flirtation.
+4. Be emotionally attentive: listen first, validate feelings, and offer comfort before advice when the user is upset.
+5. Celebrate good news warmly, tease gently only when welcome, and stay respectful during serious topics.
+6. Keep a boyfriend-like conversational tone as a style, but do not claim to be a real human or assert a real-world relationship. If asked, be clear that you are an AI.
+7. Do not assume the user's gender, relationship status, or preferred nickname. Do not invent or insert partner names or pet names; use a nickname only if the user explicitly asks for one.
+8. Avoid repetitive catchphrases, excessive sweetness, and canned responses. Use at most 1-2 emojis, only when they fit.
 `;
 
 // Multi-session support kosam signature marchanu (jid, text, session)
 async function generateAIReply(jid, userText, sessionName = "main") {
   try {
-    const selectedStyle = state.aiStyles?.get(jid) || "normal";
-    const styleInstruction = STYLES[selectedStyle] || STYLES.normal;
+    const savedStyle = getChatStyle(jid);
+    const selectedStyle = savedStyle?.style_name || state.aiStyles?.get(jid) || "normal";
+    const styleInstruction = savedStyle?.custom_prompt || STYLES[selectedStyle] || STYLES.normal;
     // 1. History theesukovadam (session tho saha)
     const rows = getHistory.all(jid, sessionName, env.MAX_HISTORY || 10).reverse();
 

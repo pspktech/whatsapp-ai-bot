@@ -24,6 +24,12 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value INTEGER NOT NULL DEFAULT 0
   );
+
+  CREATE TABLE IF NOT EXISTS chat_styles (
+    jid TEXT PRIMARY KEY,
+    style_name TEXT NOT NULL,
+    custom_prompt TEXT
+  );
 `);
 
 // 2. Purathana DB unte, automatic ga session column add avvadaniki try chestundi
@@ -57,4 +63,30 @@ function getStat(key) {
   return row ? row.value : 0;
 }
 
-module.exports = { DATA_DIR, db, insertMessage, getHistory, incrementStat, getStat };
+function getChatStyle(jid) {
+  return db.prepare("SELECT style_name, custom_prompt FROM chat_styles WHERE jid = ?").get(jid);
+}
+
+function setChatStyle(jid, styleName, customPrompt = null) {
+  db.prepare(`
+    INSERT INTO chat_styles (jid, style_name, custom_prompt) VALUES (?, ?, ?)
+    ON CONFLICT(jid) DO UPDATE SET style_name = excluded.style_name,
+      custom_prompt = excluded.custom_prompt
+  `).run(jid, styleName, customPrompt);
+}
+
+function resetChatStyle(jid) {
+  db.prepare("DELETE FROM chat_styles WHERE jid = ?").run(jid);
+}
+
+module.exports = {
+  DATA_DIR,
+  db,
+  insertMessage,
+  getHistory,
+  incrementStat,
+  getStat,
+  getChatStyle,
+  setChatStyle,
+  resetChatStyle,
+};
