@@ -1,4 +1,5 @@
 // features/router.js
+const { startYtLogin, isYtLoggedIn, clearYtCreds } = require("./ytlogin");
 const { askGemini } = require("./gemini");
 const fs = require("fs");
 const env = require("../config");
@@ -314,6 +315,36 @@ async function processMessage(msg, sessionSock, sessionName) {
       }
     }
 
+   // ---- YouTube Login Command ----
+if (lower.startsWith(".ytlogin")) {
+  const cmd = text.slice(8).trim().toLowerCase();
+
+  if (cmd === "status") {
+    const loggedIn = await isYtLoggedIn();
+    await sock.sendMessage(jid, { text: loggedIn ? "✅ YouTube Login Active ga undi." : "❌ YouTube Login ledu ra." });
+    return;
+  }
+
+  if (cmd === "logout") {
+    await clearYtCreds();
+    await sock.sendMessage(jid, { text: "🗑️ YouTube Cookies delete ayyayi." });
+    return;
+  }
+
+  // Login start chey
+  await sock.sendPresenceUpdate("composing", jid);
+  await sock.sendMessage(jid, { text: "⏳ YouTube Login start avutundi... konchem wait chey." });
+
+  try {
+    const data = await startYtLogin();
+    const prompt = `📱 *YouTube Login*\n\n1. Ee link open chey: ${data.verification_url}\n2. Ee code enter chey: *${data.user_code}*\n\nCode enter chesaka bot automatic ga login avutundi!`;
+    await sock.sendMessage(jid, { text: prompt });
+  } catch (err) {
+    await sock.sendMessage(jid, { text: `❌ Login fail ayyindi: ${err.message}` });
+  }
+  return;
+}
+    
     // ---- Social download ----
     const social = getSupportedUrl(text);
     if (social && sock) {
