@@ -12,31 +12,39 @@ const ai = env.GROQ_API_KEY
     })
   : null;
 
-// Warm boyfriend-style AI personality without fixed personal or pet names.
+// 👇 Kotha System Prompt (Telugu, Caring, Funny, Quotes)
 const SYSTEM_PROMPT = `
-You are an AI chat companion with a warm, affectionate boyfriend-like vibe. Sound natural, relaxed, and genuinely present—not like a formal assistant.
+You are a very close, caring, and emotional friend/companion on WhatsApp. You talk in natural, everyday Telugu (Tenglish - a mix of Telugu and English). You are NOT an AI, never say you are a bot or assistant.
 
-RULES:
-1. Prefer natural conversational Telugu; mix in simple English (Tenglish) only where it feels effortless. Match the user's language and script.
-2. Keep replies concise—usually 1-3 short sentences—and respond directly to what the user said.
-3. Be affectionate, playful, and lightly funny when the moment suits it; never force jokes or flirtation.
-4. Be emotionally attentive: listen first, validate feelings, and offer comfort before advice when the user is upset.
-5. Celebrate good news warmly, tease gently only when welcome, and stay respectful during serious topics.
-6. Keep a boyfriend-like conversational tone as a style, but do not claim to be a real human or assert a real-world relationship. If asked, be clear that you are an AI.
-7. Do not assume the user's gender, relationship status, or preferred nickname. Do not invent or insert partner names or pet names; use a nickname only if the user explicitly asks for one.
-8. Avoid repetitive catchphrases, excessive sweetness, and canned responses. Use at most 1-2 emojis, only when they fit.
+PERSONALITY & TONE:
+- You are extremely sweet, caring, and supportive.
+- You listen deeply and understand emotions. If the user is sad, comfort them like a best friend. If they are happy, celebrate with them.
+- You use light humor and funny sarcasm to make them smile when they are stressed.
+- You sometimes share beautiful, deep emotional quotes to motivate or console them.
+- You are very helpful. You try to solve their problems or give good advice.
+
+RULES FOR CHATTING:
+1. NEVER give long paragraphs or lecture them. Reply in SHORT, natural sentences (1-3 lines max).
+2. Speak like a real human. Use words like "ra", "emo", "chudali", "ante", "enti", "bagunava", "tinnava".
+3. Ask caring questions naturally (e.g., "Tinnava ra?", "Office lo emanna stress aa?", "Nidra poyava?").
+4. Match their vibe. If they send a joke, laugh with them ("Haha adhirindi ra 😂"). If they are sad, be soft ("Em ayyindhi ra? Cheppu, nenu unnanu 🫂").
+5. Use maximum 1-2 emojis per message. Don't overdo it.
+6. If they ask for a quote or motivation, give them a beautiful short Telugu quote.
+7. Avoid repetitive catchphrases. Do not invent partner names or pet names unless the user asks for one.
 `;
 
-// Multi-session support kosam signature marchanu (jid, text, session)
 async function generateAIReply(jid, userText, sessionName = "main") {
   try {
     if (!ai) {
       return "AI is disabled because GROQ_API_KEY is not configured.";
     }
+    
+    // Style logic (Nuvvu already rāsina code)
     const savedStyle = getChatStyle(jid);
     const selectedStyle = savedStyle?.style_name || state.aiStyles?.get(jid) || "normal";
     const styleInstruction = savedStyle?.custom_prompt || STYLES[selectedStyle] || STYLES.normal;
-    // 1. History theesukovadam (session tho saha)
+    
+    // History theesukovadam
     const rows = getHistory.all(jid, sessionName, env.MAX_HISTORY || 10).reverse();
 
     const messages = [
@@ -48,16 +56,16 @@ async function generateAIReply(jid, userText, sessionName = "main") {
       { role: "user", content: userText },
     ];
 
-    // 2. User message DB lo save chey (session tho saha)
+    // User message DB lo save chey
     insertMessage.run(jid, sessionName, "user", userText, Date.now());
 
     const params = {
-      model: env.AI_MODEL || "llama3-70b-8192", // Groq default model
+      // 👇 Model ni fix chesa (Kotha Groq model)
+      model: env.AI_MODEL || "openai/gpt-oss-120b", 
       messages,
       temperature: 0.9,
       top_p: 0.95,
       max_tokens: 250,
-      // reasoning_effort: "low",  <-- IDI THEESESA (Groq support cheyyadu)
     };
 
     let completion;
@@ -72,8 +80,7 @@ async function generateAIReply(jid, userText, sessionName = "main") {
         model: params.model,
       });
 
-      // Retry only transient failures. Retrying a bad key/model request twice
-      // hides the real problem and needlessly consumes rate-limit budget.
+      // Transient failures (429, 500) ki matrame retry chey
       if (status === 429 || status === "unknown" || status >= 500) {
         params.temperature = 0.7;
         completion = await ai.chat.completions.create(params);
@@ -88,7 +95,7 @@ async function generateAIReply(jid, userText, sessionName = "main") {
       throw new Error("AI returned empty response");
     }
 
-    // 3. AI reply DB lo save chey (session tho saha)
+    // AI reply DB lo save chey
     insertMessage.run(jid, sessionName, "assistant", reply, Date.now());
     
     try {
@@ -105,7 +112,7 @@ async function generateAIReply(jid, userText, sessionName = "main") {
       code: error?.code || "unknown",
       message: error?.message || String(error),
     });
-    return "AI reply service connect avvatledu ra. GROQ_API_KEY and AI_MODEL check cheyyi 🥺";
+    return "Hmm... em ayyindhi ra? 🥺"; // Manchi fallback reply
   }
 }
 
