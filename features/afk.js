@@ -49,7 +49,7 @@ async function sendAfkReply(sock, jid, msg) {
   await sock.sendMessage(
     jid,
     {
-      text: `💤 *Currently AFK* (${dur} ago)\n📝 _${state.afkReason || "No reason"}_\n\n_I'll reply when I'm back._`,
+      text: `💤 *Currently OFFLINE* (${dur} ago)\n📝 _${state.afkReason || "No reason"}_\n\n_I'll reply when I'm ONLINE._`,
     },
     { quoted: msg }
   );
