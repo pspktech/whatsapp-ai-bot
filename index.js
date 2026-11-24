@@ -27,6 +27,44 @@ const {
 } = require("./features/presence");
 const createApp = require("./features/admin");
 
+const reconnectTimers = new Map();
+const reconnectAttempts = new Map();
+const startingSessions = new Set();
+
+function disconnectStatus(lastDisconnect) {
+  return (
+    lastDisconnect?.error?.output?.statusCode ??
+    lastDisconnect?.error?.data?.statusCode ??
+    lastDisconnect?.error?.statusCode ??
+    "unknown"
+  );
+}
+
+function clearReconnectTimer(sessionName) {
+  const timer = reconnectTimers.get(sessionName);
+  if (timer) clearTimeout(timer);
+  reconnectTimers.delete(sessionName);
+}
+
+function scheduleReconnect(sessionName, reason = "unknown") {
+  if (reconnectTimers.has(sessionName)) return;
+  const attempts = (reconnectAttempts.get(sessionName) || 0) + 1;
+  reconnectAttempts.set(sessionName, attempts);
+  const delay = Math.min(60_000, 3_000 * 2 ** Math.min(attempts - 1, 4));
+  console.log(
+    `🔁 [${sessionName}] Reconnecting in ${Math.round(delay / 1000)}s... ` +
+      `(attempt ${attempts}, reason ${reason})`
+  );
+  const timer = setTimeout(() => {
+    reconnectTimers.delete(sessionName);
+    startSession(sessionName).catch((error) =>
+      console.error(`[${sessionName}] reconnect error:`, error.message)
+    );
+  }, delay);
+  timer.unref?.();
+  reconnectTimers.set(sessionName, timer);
+}
+
 // ======================================================
 // SESSIONS LIST
 // ======================================================
@@ -41,6 +79,8 @@ const SESSIONS = (env.WHATSAPP_SESSIONS || "main")
 // ======================================================
 
 async function startSession(sessionName) {
+  if (startingSessions.has(sessionName)) return state.sockets?.get(sessionName) || null;
+  startingSessions.add(sessionName);
   try {
     // 👇 Session start ayya time ni save chesthunnam (Purathana messages skip cheyadaniki)
     const sessionStartTime = Math.floor(Date.now() / 1000);
@@ -102,6 +142,8 @@ async function startSession(sessionName) {
 
       if (connection === "open") {
         console.log(`✅ [${sessionName}] WhatsApp connected`);
+        reconnectAttempts.delete(sessionName);
+        clearReconnectTimer(sessionName);
 
         // Hide online status and keep re-applying it when privacy/freeze mode
         // is enabled. Typing indicators are also suppressed by the router.
@@ -132,7 +174,11 @@ async function startSession(sessionName) {
       }
 
       if (connection === "close") {
-        console.log(`⚠️  [${sessionName}] Disconnected`);
+        const statusCode = disconnectStatus(lastDisconnect);
+        const errorMessage = lastDisconnect?.error?.message || "unknown";
+        console.log(
+          `⚠️ [${sessionName}] Disconnected (status=${statusCode}, error=${errorMessage})`
+        );
 
         // 👇 Dashboard Status Fix (Anni close aithe offline avvali)
         if (!state.sessionStatus) state.sessionStatus = new Map();
@@ -153,7 +199,6 @@ async function startSession(sessionName) {
           } catch (e) {}
         }
 
-        const statusCode = lastDisconnect?.error?.output?.statusCode;
         const loggedOut = statusCode === DisconnectReason.loggedOut;
 
         if (loggedOut) {
@@ -163,8 +208,7 @@ async function startSession(sessionName) {
           return;
         }
 
-        console.log(`🔁 [${sessionName}] Reconnecting in 3s...`);
-        setTimeout(() => startSession(sessionName), 3000);
+        scheduleReconnect(sessionName, statusCode);
       }
     });
 
@@ -197,10 +241,13 @@ async function startSession(sessionName) {
       }
     });
 
+    startingSessions.delete(sessionName);
     return sessionSock;
   } catch (err) {
+    startingSessions.delete(sessionName);
     console.error(`[${sessionName}] startSession error:`, err);
-    setTimeout(() => startSession(sessionName), 5000);
+    scheduleReconnect(sessionName, err?.message || "startup-error");
+    return null;
   }
 }
 
