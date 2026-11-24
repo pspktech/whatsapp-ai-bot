@@ -101,7 +101,7 @@ Scan the QR code in WhatsApp (Linked Devices).
 🎮 Commands
 Command Description
 .menu / .help Shows all bot features, commands, and uses
-.lyrics <Song - Artist> Fetches lyrics (e.g., .lyrics Samajavaragamana - Sid Sriram)
+.lyrics <Artist - Song> Fetches lyrics (e.g., .lyrics Sid Sriram - Samajavaragamana)
 .lyrics Fetches lyrics for the currently playing song
 .lfm Shows the latest 10 Last.fm tracks
 .ai off / .ai on Toggles AI auto-reply

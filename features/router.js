@@ -3,7 +3,7 @@ const { askGemini } = require("./gemini");
 const fs = require("fs");
 const env = require("../config");
 const state = require("../state");
-const { insertMessage, incrementStat } = require("../db");
+const { DATA_DIR, insertMessage, incrementStat } = require("../db");
 const { generateAIReply } = require("./ai");
 const { getSupportedUrl, downloadMedia, downloadAudio } = require("./media");
 const { handleWeatherCommand } = require("./weather");
@@ -25,6 +25,7 @@ const { fetchLyrics } = require("./lyrics");
 const { handleMenuCommand } = require("./menu");
 const { handleLastfmCommand } = require("./lastfm");
 const { handleGrokCommand } = require("./grok");
+const { sendPresenceUpdate } = require("./presence");
 const {
   cacheIncomingMessage,
   handleDeletedMessage,
@@ -73,7 +74,9 @@ async function processMessage(msg, sessionSock, sessionName) {
     if (jid.endsWith("@g.us") || jid === "status@broadcast") return;
 
     const text = extractMessageText(msg.message).trim();
-    const isOwner = msg.key?.fromMe;
+    const isOwner = Boolean(
+      msg.key?.fromMe || (env.OWNER_JID && jid === env.OWNER_JID)
+    );
 
     console.log(
       `📩 [${session}] ${jid}${isOwner ? " [fromMe]" : ""} | ${text || "<non-text message>"}`
@@ -156,7 +159,7 @@ async function processMessage(msg, sessionSock, sessionName) {
     // ---- Weather command ----
     if (lower === "/weather" || lower.startsWith("/weather ")) {
       if (!sock) return;
-      await sock.sendPresenceUpdate("composing", jid);
+      await sendPresenceUpdate(sock, "composing", jid);
       const reply = await handleWeatherCommand(text);
       await sock.sendMessage(jid, { text: reply });
       state.totalSent++;
@@ -165,10 +168,10 @@ async function processMessage(msg, sessionSock, sessionName) {
     }
 
     // ---- AI ON/OFF toggle ----
-    if (await handleAiToggleCommand(sock, jid, text)) return;
+    if (await handleAiToggleCommand(sock, jid, text, isOwner)) return;
 
     // ---- AFK command ----
-    if (await handleAfkCommand(sock, jid, text)) return;
+    if (await handleAfkCommand(sock, jid, text, isOwner)) return;
 
     // ---- Fixed keyword auto-replies (before AI) ----
     if (!isOwner && (await handleAutoReply(sock, jid, text))) return;
@@ -182,7 +185,7 @@ async function processMessage(msg, sessionSock, sessionName) {
     ) {
       if (!sock) return;
       try {
-        await sock.sendPresenceUpdate("composing", jid);
+        await sendPresenceUpdate(sock, "composing", jid);
         const parts = text.slice(1).trim().split(/\s+/);
         const cmd = parts.shift().toLowerCase();
         const args = parts.join(" ");
@@ -251,14 +254,13 @@ async function processMessage(msg, sessionSock, sessionName) {
 
     // ---- Notes command ----
     if (lower.startsWith(".note ")) {
-      const path = "./data/notes.json";
+      const path = require("path").join(DATA_DIR, "notes.json");
       const input = text.slice(6).trim();
       const args = input.split(" ");
       const action = args[0];
       const content = args.slice(1).join(" ");
 
-      if (!fs.existsSync("./data"))
-        fs.mkdirSync("./data", { recursive: true });
+      if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
       let data = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path)) : {};
       if (!data[jid]) data[jid] = [];
@@ -299,7 +301,7 @@ async function processMessage(msg, sessionSock, sessionName) {
     if (lower.startsWith("song ")) {
       const songName = text.slice(5).trim();
       if (songName && sock) {
-        await sock.sendPresenceUpdate("composing", jid);
+        await sendPresenceUpdate(sock, "composing", jid);
         const reply = `🎧 Ippudu vintunna:\n\n🎵 *${songName}*`;
         await sock.sendMessage(jid, { text: reply });
         try {
@@ -316,7 +318,7 @@ async function processMessage(msg, sessionSock, sessionName) {
     const social = getSupportedUrl(text);
     if (social && sock) {
       try {
-        await sock.sendPresenceUpdate("composing", jid);
+        await sendPresenceUpdate(sock, "composing", jid);
         if (social.type === "audio") {
           const media = await downloadAudio(social.url);
           await sock.sendMessage(jid, {
@@ -362,7 +364,7 @@ async function processMessage(msg, sessionSock, sessionName) {
         return;
       }
 
-      await sock.sendPresenceUpdate("composing", jid);
+      await sendPresenceUpdate(sock, "composing", jid);
       
       const reply = await askGemini(prompt);
       
@@ -405,7 +407,7 @@ async function processMessage(msg, sessionSock, sessionName) {
         }
       }
 
-      await sock.sendPresenceUpdate("composing", jid);
+      await sendPresenceUpdate(sock, "composing", jid);
       
       // Lyrics fetch cheddam
       const lyrics = await fetchLyrics(artist, title);
@@ -433,7 +435,7 @@ async function processMessage(msg, sessionSock, sessionName) {
     if (!sock) return;
 
     try {
-      await sock.sendPresenceUpdate("composing", jid);
+      await sendPresenceUpdate(sock, "composing", jid);
     } catch (presenceError) {
       console.warn("AI composing presence failed:", presenceError.message);
     }

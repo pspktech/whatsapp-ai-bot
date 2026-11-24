@@ -65,7 +65,7 @@ async function login(){
 
   app.post("/api/admin/login", (req, res) => {
     const { password } = req.body;
-    if (!password || password !== env.ADMIN_PASSWORD) {
+    if (!env.ADMIN_PASSWORD || !password || password !== env.ADMIN_PASSWORD) {
       return res.status(401).json({ success: false });
     }
     const token = crypto.randomBytes(32).toString("hex");

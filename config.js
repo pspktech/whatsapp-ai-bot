@@ -9,7 +9,13 @@ const env = {
   XAI_MODEL: process.env.XAI_MODEL || "grok-4.7",
   XAI_BASE_URL: process.env.XAI_BASE_URL || "https://api.x.ai/v1",
   MAX_HISTORY: Number(process.env.MAX_HISTORY || 10),
-  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || "change-this-password",
+  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || "",
+  OWNER_JID: process.env.OWNER_JID || "",
+
+  // WhatsApp presence privacy. Both are enabled by default so the bot does
+  // not advertise online/typing state unless the operator explicitly opts in.
+  HIDE_ONLINE: process.env.HIDE_ONLINE !== "false",
+  ONLINE_FREEZE: process.env.ONLINE_FREEZE !== "false",
 
   OWNER_NAME: process.env.OWNER_NAME || "Madhu Patel",
   OWNER_SITE: process.env.OWNER_SITE || "https://madhupatel.is-a.dev",
@@ -24,7 +30,6 @@ const env = {
   INSTAGRAM_URL: process.env.INSTAGRAM_URL || "",
   YOUTUBE_URL: process.env.YOUTUBE_URL || "",
   OWNER_PHONE: process.env.OWNER_PHONE || "",
-  OWNER_JID: process.env.OWNER_JID || "",
   FEEDBACK_TARGET_JID: process.env.FEEDBACK_TARGET_JID || "",
   DAILY_TARGET_JID: process.env.DAILY_TARGET_JID || "",
   DAILY_AUTOMATION_ENABLED: process.env.DAILY_AUTOMATION_ENABLED !== "false",
@@ -50,8 +55,11 @@ const env = {
 };
 
 if (!env.GROQ_API_KEY) {
-  console.error("❌ GROQ_API_KEY missing in .env");
-  process.exit(1);
+  console.warn("⚠️ GROQ_API_KEY missing; Groq AI replies are disabled.");
+}
+
+if (!env.ADMIN_PASSWORD) {
+  console.warn("⚠️ ADMIN_PASSWORD missing; admin login is disabled until it is configured.");
 }
 
 module.exports = env;

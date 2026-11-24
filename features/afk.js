@@ -3,10 +3,14 @@ const state = require("../state");
 const { incrementStat } = require("../db");
 
 // ---------- AFK command (owner only) ----------
-async function handleAfkCommand(sock, jid, text) {
+async function handleAfkCommand(sock, jid, text, isOwner = false) {
   const lower = text.toLowerCase().trim();
   if (lower !== ".afk" && !lower.startsWith(".afk ")) return false;
   if (!sock) return true;
+  if (!isOwner) {
+    await sock.sendMessage(jid, { text: "❌ This command is available only to the owner." });
+    return true;
+  }
 
   const reason = text.slice(4).trim();
 

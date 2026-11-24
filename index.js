@@ -20,6 +20,11 @@ const { processMessage, enqueue } = require("./features/router");
 const { startWeatherSchedule } = require("./features/weather");
 const { startDailyAutomation, stopDailyAutomation } = require("./features/daily");
 const { startLastfmPolling, stopLastfmPolling } = require("./features/lastfm");
+const {
+  hideOnline,
+  startPresencePrivacy,
+  stopPresencePrivacy,
+} = require("./features/presence");
 const createApp = require("./features/admin");
 
 // ======================================================
@@ -98,10 +103,10 @@ async function startSession(sessionName) {
       if (connection === "open") {
         console.log(`✅ [${sessionName}] WhatsApp connected`);
 
-        // 👇 Force Offline (Online kanipinchakunda)
-        try {
-          await sessionSock.sendPresenceUpdate("unavailable");
-        } catch (e) {}
+        // Hide online status and keep re-applying it when privacy/freeze mode
+        // is enabled. Typing indicators are also suppressed by the router.
+        await hideOnline(sessionSock);
+        startPresencePrivacy(sessionSock, sessionName);
 
         // 👇 Dashboard Status Fix (Edaina okka session open unte chalu)
         if (!state.sessionStatus) state.sessionStatus = new Map();
@@ -133,6 +138,7 @@ async function startSession(sessionName) {
         if (!state.sessionStatus) state.sessionStatus = new Map();
         state.sessionStatus.set(sessionName, false);
         state.isConnected = Array.from(state.sessionStatus.values()).some(v => v === true);
+        stopPresencePrivacy(sessionName);
 
         if (sessionName === state.primarySession) {
           state.isStarting = false;

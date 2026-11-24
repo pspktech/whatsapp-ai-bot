@@ -4,6 +4,7 @@ const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
 const { execFile } = require("child_process");
+const { spawnSync } = require("child_process");
 const { promisify } = require("util");
 
 const execFileAsync = promisify(execFile);
@@ -13,12 +14,17 @@ const COOKIES_PATH = path.join(__dirname, "..", "cookies.txt");
 
 // Common yt-dlp args. Cookies are optional; private/login-required media may
 // still need a valid cookies.txt file in the project root.
+const DENO_AVAILABLE = spawnSync("deno", ["--version"], { stdio: "ignore" }).status === 0;
 const COMMON_ARGS = [
-  "--js-runtimes", "deno",
+  ...(DENO_AVAILABLE ? ["--js-runtimes", "deno"] : []),
   "--no-playlist",
   "--no-warnings",
   "--no-progress",
 ];
+
+if (!DENO_AVAILABLE) {
+  console.warn("⚠️ Deno not found; yt-dlp will use its available fallback runtime.");
+}
 
 if (fs.existsSync(COOKIES_PATH)) {
   COMMON_ARGS.unshift("--cookies", COOKIES_PATH);

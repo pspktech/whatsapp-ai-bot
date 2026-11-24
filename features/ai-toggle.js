@@ -3,12 +3,16 @@ const state = require("../state");
 const { incrementStat } = require("../db");
 
 // ---------- AI ON/OFF command (owner only) ----------
-async function handleAiToggleCommand(sock, jid, text) {
+async function handleAiToggleCommand(sock, jid, text, isOwner = false) {
   const lower = text.toLowerCase().trim();
   if (lower !== ".ai on" && lower !== ".ai off" && lower !== ".ai") {
     return false;
   }
   if (!sock) return true;
+  if (!isOwner) {
+    await sock.sendMessage(jid, { text: "❌ This command is available only to the owner." });
+    return true;
+  }
 
   if (lower === ".ai on") {
     state.aiEnabled = true;

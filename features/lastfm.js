@@ -20,10 +20,15 @@ async function getCurrentlyPlayingLastfm() {
   if (!res.ok) return null;
 
   const data = await res.json();
-  const tracks = data?.recenttracks?.track;
-  if (!tracks || !tracks.length) return null;
+  const rawTrack = data?.recenttracks?.track;
+  const tracks = rawTrack
+    ? Array.isArray(rawTrack)
+      ? rawTrack
+      : [rawTrack]
+    : [];
+  if (!tracks.length) return null;
 
-  const track = Array.isArray(tracks) ? tracks[0] : tracks;
+  const track = tracks[0];
   const nowPlaying = track["@attr"]?.nowplaying === "true";
   if (!nowPlaying) return null;
 
@@ -91,8 +96,9 @@ async function getRecentTracks(limit = 10) {
   if (!res.ok || data.error) {
     throw new Error(data.message || `Last.fm API error (${res.status})`);
   }
-  const tracks = data?.recenttracks?.track || [];
-  return Array.isArray(tracks) ? tracks : [tracks];
+  const rawTracks = data?.recenttracks?.track;
+  if (!rawTracks) return [];
+  return Array.isArray(rawTracks) ? rawTracks : [rawTracks];
 }
 
 function formatRecentTracks(tracks) {
@@ -172,6 +178,7 @@ async function startLastfmPolling() {
 
 function stopLastfmPolling() {
   clearInterval(pollTimer);
+  pollTimer = null;
 }
 
 module.exports = {

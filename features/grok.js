@@ -1,6 +1,7 @@
 // features/grok.js
 const env = require("../config");
 const { incrementStat } = require("../db");
+const { sendPresenceUpdate } = require("./presence");
 
 function hasGrokConfig() {
   return Boolean(env.XAI_API_KEY);
@@ -77,7 +78,7 @@ async function handleGrokCommand(sock, jid, text) {
   }
 
   try {
-    await sock.sendPresenceUpdate("composing", jid).catch(() => {});
+    await sendPresenceUpdate(sock, "composing", jid);
     const answer = await askGrok(question);
     await sock.sendMessage(jid, { text: `🤖 *Grok Enquiry*\n\n${answer}` });
     incrementStat("grok_replies");

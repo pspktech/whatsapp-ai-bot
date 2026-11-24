@@ -5,10 +5,12 @@ const { insertMessage, getHistory, incrementStat, getChatStyle } = require("../d
 const state = require("../state");
 const { STYLES } = require("./ai-style");
 
-const ai = new OpenAI({
-  apiKey: env.GROQ_API_KEY,
-  baseURL: "https://api.groq.com/openai/v1",
-});
+const ai = env.GROQ_API_KEY
+  ? new OpenAI({
+      apiKey: env.GROQ_API_KEY,
+      baseURL: "https://api.groq.com/openai/v1",
+    })
+  : null;
 
 // Warm boyfriend-style AI personality without fixed personal or pet names.
 const SYSTEM_PROMPT = `
@@ -28,6 +30,9 @@ RULES:
 // Multi-session support kosam signature marchanu (jid, text, session)
 async function generateAIReply(jid, userText, sessionName = "main") {
   try {
+    if (!ai) {
+      return "AI is disabled because GROQ_API_KEY is not configured.";
+    }
     const savedStyle = getChatStyle(jid);
     const selectedStyle = savedStyle?.style_name || state.aiStyles?.get(jid) || "normal";
     const styleInstruction = savedStyle?.custom_prompt || STYLES[selectedStyle] || STYLES.normal;
